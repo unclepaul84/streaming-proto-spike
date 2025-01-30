@@ -2,6 +2,8 @@
 // source: PricesStreamedFilePayload.proto
 
 // Protobuf Java Version: 3.25.6
+package proto;
+
 public final class PricesStreamedFilePayloadOuterClass {
   private PricesStreamedFilePayloadOuterClass() {}
   public static void registerAllExtensions(
@@ -26,11 +28,11 @@ public final class PricesStreamedFilePayloadOuterClass {
      * <code>.PriceEntity price = 1;</code>
      * @return The price.
      */
-    PriceEntityOuterClass.PriceEntity getPrice();
+    proto.PriceEntityOuterClass.PriceEntity getPrice();
     /**
      * <code>.PriceEntity price = 1;</code>
      */
-    PriceEntityOuterClass.PriceEntityOrBuilder getPriceOrBuilder();
+    proto.PriceEntityOuterClass.PriceEntityOrBuilder getPriceOrBuilder();
   }
   /**
    * Protobuf type {@code PricesStreamedFilePayload}
@@ -56,20 +58,20 @@ public final class PricesStreamedFilePayloadOuterClass {
 
     public static final com.google.protobuf.Descriptors.Descriptor
         getDescriptor() {
-      return PricesStreamedFilePayloadOuterClass.internal_static_PricesStreamedFilePayload_descriptor;
+      return proto.PricesStreamedFilePayloadOuterClass.internal_static_PricesStreamedFilePayload_descriptor;
     }
 
     @java.lang.Override
     protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return PricesStreamedFilePayloadOuterClass.internal_static_PricesStreamedFilePayload_fieldAccessorTable
+      return proto.PricesStreamedFilePayloadOuterClass.internal_static_PricesStreamedFilePayload_fieldAccessorTable
           .ensureFieldAccessorsInitialized(
-              PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload.class, PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload.Builder.class);
+              proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload.class, proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload.Builder.class);
     }
 
     private int bitField0_;
     public static final int PRICE_FIELD_NUMBER = 1;
-    private PriceEntityOuterClass.PriceEntity price_;
+    private proto.PriceEntityOuterClass.PriceEntity price_;
     /**
      * <code>.PriceEntity price = 1;</code>
      * @return Whether the price field is set.
@@ -83,15 +85,15 @@ public final class PricesStreamedFilePayloadOuterClass {
      * @return The price.
      */
     @java.lang.Override
-    public PriceEntityOuterClass.PriceEntity getPrice() {
-      return price_ == null ? PriceEntityOuterClass.PriceEntity.getDefaultInstance() : price_;
+    public proto.PriceEntityOuterClass.PriceEntity getPrice() {
+      return price_ == null ? proto.PriceEntityOuterClass.PriceEntity.getDefaultInstance() : price_;
     }
     /**
      * <code>.PriceEntity price = 1;</code>
      */
     @java.lang.Override
-    public PriceEntityOuterClass.PriceEntityOrBuilder getPriceOrBuilder() {
-      return price_ == null ? PriceEntityOuterClass.PriceEntity.getDefaultInstance() : price_;
+    public proto.PriceEntityOuterClass.PriceEntityOrBuilder getPriceOrBuilder() {
+      return price_ == null ? proto.PriceEntityOuterClass.PriceEntity.getDefaultInstance() : price_;
     }
 
     private byte memoizedIsInitialized = -1;
@@ -134,10 +136,10 @@ public final class PricesStreamedFilePayloadOuterClass {
       if (obj == this) {
        return true;
       }
-      if (!(obj instanceof PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload)) {
+      if (!(obj instanceof proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload)) {
         return super.equals(obj);
       }
-      PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload other = (PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload) obj;
+      proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload other = (proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload) obj;
 
       if (hasPrice() != other.hasPrice()) return false;
       if (hasPrice()) {
@@ -164,44 +166,44 @@ public final class PricesStreamedFilePayloadOuterClass {
       return hash;
     }
 
-    public static PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload parseFrom(
+    public static proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload parseFrom(
         java.nio.ByteBuffer data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload parseFrom(
+    public static proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload parseFrom(
         java.nio.ByteBuffer data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload parseFrom(
+    public static proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload parseFrom(
+    public static proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload parseFrom(
         com.google.protobuf.ByteString data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload parseFrom(byte[] data)
+    public static proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload parseFrom(byte[] data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload parseFrom(
+    public static proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload parseFrom(
         byte[] data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload parseFrom(java.io.InputStream input)
+    public static proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload parseFrom(java.io.InputStream input)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseWithIOException(PARSER, input);
     }
-    public static PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload parseFrom(
+    public static proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload parseFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
@@ -209,26 +211,26 @@ public final class PricesStreamedFilePayloadOuterClass {
           .parseWithIOException(PARSER, input, extensionRegistry);
     }
 
-    public static PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload parseDelimitedFrom(java.io.InputStream input)
+    public static proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload parseDelimitedFrom(java.io.InputStream input)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseDelimitedWithIOException(PARSER, input);
     }
 
-    public static PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload parseDelimitedFrom(
+    public static proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload parseDelimitedFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
     }
-    public static PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload parseFrom(
+    public static proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload parseFrom(
         com.google.protobuf.CodedInputStream input)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseWithIOException(PARSER, input);
     }
-    public static PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload parseFrom(
+    public static proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload parseFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
@@ -241,7 +243,7 @@ public final class PricesStreamedFilePayloadOuterClass {
     public static Builder newBuilder() {
       return DEFAULT_INSTANCE.toBuilder();
     }
-    public static Builder newBuilder(PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload prototype) {
+    public static Builder newBuilder(proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload prototype) {
       return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
     }
     @java.lang.Override
@@ -262,21 +264,21 @@ public final class PricesStreamedFilePayloadOuterClass {
     public static final class Builder extends
         com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
         // @@protoc_insertion_point(builder_implements:PricesStreamedFilePayload)
-        PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayloadOrBuilder {
+        proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayloadOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
-        return PricesStreamedFilePayloadOuterClass.internal_static_PricesStreamedFilePayload_descriptor;
+        return proto.PricesStreamedFilePayloadOuterClass.internal_static_PricesStreamedFilePayload_descriptor;
       }
 
       @java.lang.Override
       protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
           internalGetFieldAccessorTable() {
-        return PricesStreamedFilePayloadOuterClass.internal_static_PricesStreamedFilePayload_fieldAccessorTable
+        return proto.PricesStreamedFilePayloadOuterClass.internal_static_PricesStreamedFilePayload_fieldAccessorTable
             .ensureFieldAccessorsInitialized(
-                PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload.class, PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload.Builder.class);
+                proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload.class, proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload.Builder.class);
       }
 
-      // Construct using PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload.newBuilder()
+      // Construct using proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload.newBuilder()
       private Builder() {
         maybeForceBuilderInitialization();
       }
@@ -307,17 +309,17 @@ public final class PricesStreamedFilePayloadOuterClass {
       @java.lang.Override
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
-        return PricesStreamedFilePayloadOuterClass.internal_static_PricesStreamedFilePayload_descriptor;
+        return proto.PricesStreamedFilePayloadOuterClass.internal_static_PricesStreamedFilePayload_descriptor;
       }
 
       @java.lang.Override
-      public PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload getDefaultInstanceForType() {
-        return PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload.getDefaultInstance();
+      public proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload getDefaultInstanceForType() {
+        return proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload.getDefaultInstance();
       }
 
       @java.lang.Override
-      public PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload build() {
-        PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload result = buildPartial();
+      public proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload build() {
+        proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload result = buildPartial();
         if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
@@ -325,14 +327,14 @@ public final class PricesStreamedFilePayloadOuterClass {
       }
 
       @java.lang.Override
-      public PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload buildPartial() {
-        PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload result = new PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload(this);
+      public proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload buildPartial() {
+        proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload result = new proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload(this);
         if (bitField0_ != 0) { buildPartial0(result); }
         onBuilt();
         return result;
       }
 
-      private void buildPartial0(PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload result) {
+      private void buildPartial0(proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload result) {
         int from_bitField0_ = bitField0_;
         int to_bitField0_ = 0;
         if (((from_bitField0_ & 0x00000001) != 0)) {
@@ -378,16 +380,16 @@ public final class PricesStreamedFilePayloadOuterClass {
       }
       @java.lang.Override
       public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload) {
-          return mergeFrom((PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload)other);
+        if (other instanceof proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload) {
+          return mergeFrom((proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload)other);
         } else {
           super.mergeFrom(other);
           return this;
         }
       }
 
-      public Builder mergeFrom(PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload other) {
-        if (other == PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload.getDefaultInstance()) return this;
+      public Builder mergeFrom(proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload other) {
+        if (other == proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload.getDefaultInstance()) return this;
         if (other.hasPrice()) {
           mergePrice(other.getPrice());
         }
@@ -441,9 +443,9 @@ public final class PricesStreamedFilePayloadOuterClass {
       }
       private int bitField0_;
 
-      private PriceEntityOuterClass.PriceEntity price_;
+      private proto.PriceEntityOuterClass.PriceEntity price_;
       private com.google.protobuf.SingleFieldBuilderV3<
-          PriceEntityOuterClass.PriceEntity, PriceEntityOuterClass.PriceEntity.Builder, PriceEntityOuterClass.PriceEntityOrBuilder> priceBuilder_;
+          proto.PriceEntityOuterClass.PriceEntity, proto.PriceEntityOuterClass.PriceEntity.Builder, proto.PriceEntityOuterClass.PriceEntityOrBuilder> priceBuilder_;
       /**
        * <code>.PriceEntity price = 1;</code>
        * @return Whether the price field is set.
@@ -455,9 +457,9 @@ public final class PricesStreamedFilePayloadOuterClass {
        * <code>.PriceEntity price = 1;</code>
        * @return The price.
        */
-      public PriceEntityOuterClass.PriceEntity getPrice() {
+      public proto.PriceEntityOuterClass.PriceEntity getPrice() {
         if (priceBuilder_ == null) {
-          return price_ == null ? PriceEntityOuterClass.PriceEntity.getDefaultInstance() : price_;
+          return price_ == null ? proto.PriceEntityOuterClass.PriceEntity.getDefaultInstance() : price_;
         } else {
           return priceBuilder_.getMessage();
         }
@@ -465,7 +467,7 @@ public final class PricesStreamedFilePayloadOuterClass {
       /**
        * <code>.PriceEntity price = 1;</code>
        */
-      public Builder setPrice(PriceEntityOuterClass.PriceEntity value) {
+      public Builder setPrice(proto.PriceEntityOuterClass.PriceEntity value) {
         if (priceBuilder_ == null) {
           if (value == null) {
             throw new NullPointerException();
@@ -482,7 +484,7 @@ public final class PricesStreamedFilePayloadOuterClass {
        * <code>.PriceEntity price = 1;</code>
        */
       public Builder setPrice(
-          PriceEntityOuterClass.PriceEntity.Builder builderForValue) {
+          proto.PriceEntityOuterClass.PriceEntity.Builder builderForValue) {
         if (priceBuilder_ == null) {
           price_ = builderForValue.build();
         } else {
@@ -495,11 +497,11 @@ public final class PricesStreamedFilePayloadOuterClass {
       /**
        * <code>.PriceEntity price = 1;</code>
        */
-      public Builder mergePrice(PriceEntityOuterClass.PriceEntity value) {
+      public Builder mergePrice(proto.PriceEntityOuterClass.PriceEntity value) {
         if (priceBuilder_ == null) {
           if (((bitField0_ & 0x00000001) != 0) &&
             price_ != null &&
-            price_ != PriceEntityOuterClass.PriceEntity.getDefaultInstance()) {
+            price_ != proto.PriceEntityOuterClass.PriceEntity.getDefaultInstance()) {
             getPriceBuilder().mergeFrom(value);
           } else {
             price_ = value;
@@ -529,7 +531,7 @@ public final class PricesStreamedFilePayloadOuterClass {
       /**
        * <code>.PriceEntity price = 1;</code>
        */
-      public PriceEntityOuterClass.PriceEntity.Builder getPriceBuilder() {
+      public proto.PriceEntityOuterClass.PriceEntity.Builder getPriceBuilder() {
         bitField0_ |= 0x00000001;
         onChanged();
         return getPriceFieldBuilder().getBuilder();
@@ -537,23 +539,23 @@ public final class PricesStreamedFilePayloadOuterClass {
       /**
        * <code>.PriceEntity price = 1;</code>
        */
-      public PriceEntityOuterClass.PriceEntityOrBuilder getPriceOrBuilder() {
+      public proto.PriceEntityOuterClass.PriceEntityOrBuilder getPriceOrBuilder() {
         if (priceBuilder_ != null) {
           return priceBuilder_.getMessageOrBuilder();
         } else {
           return price_ == null ?
-              PriceEntityOuterClass.PriceEntity.getDefaultInstance() : price_;
+              proto.PriceEntityOuterClass.PriceEntity.getDefaultInstance() : price_;
         }
       }
       /**
        * <code>.PriceEntity price = 1;</code>
        */
       private com.google.protobuf.SingleFieldBuilderV3<
-          PriceEntityOuterClass.PriceEntity, PriceEntityOuterClass.PriceEntity.Builder, PriceEntityOuterClass.PriceEntityOrBuilder> 
+          proto.PriceEntityOuterClass.PriceEntity, proto.PriceEntityOuterClass.PriceEntity.Builder, proto.PriceEntityOuterClass.PriceEntityOrBuilder> 
           getPriceFieldBuilder() {
         if (priceBuilder_ == null) {
           priceBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
-              PriceEntityOuterClass.PriceEntity, PriceEntityOuterClass.PriceEntity.Builder, PriceEntityOuterClass.PriceEntityOrBuilder>(
+              proto.PriceEntityOuterClass.PriceEntity, proto.PriceEntityOuterClass.PriceEntity.Builder, proto.PriceEntityOuterClass.PriceEntityOrBuilder>(
                   getPrice(),
                   getParentForChildren(),
                   isClean());
@@ -578,12 +580,12 @@ public final class PricesStreamedFilePayloadOuterClass {
     }
 
     // @@protoc_insertion_point(class_scope:PricesStreamedFilePayload)
-    private static final PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload DEFAULT_INSTANCE;
+    private static final proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload DEFAULT_INSTANCE;
     static {
-      DEFAULT_INSTANCE = new PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload();
+      DEFAULT_INSTANCE = new proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload();
     }
 
-    public static PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload getDefaultInstance() {
+    public static proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload getDefaultInstance() {
       return DEFAULT_INSTANCE;
     }
 
@@ -619,7 +621,7 @@ public final class PricesStreamedFilePayloadOuterClass {
     }
 
     @java.lang.Override
-    public PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload getDefaultInstanceForType() {
+    public proto.PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload getDefaultInstanceForType() {
       return DEFAULT_INSTANCE;
     }
 
@@ -641,12 +643,13 @@ public final class PricesStreamedFilePayloadOuterClass {
     java.lang.String[] descriptorData = {
       "\n\037PricesStreamedFilePayload.proto\032\021Price" +
       "Entity.proto\"8\n\031PricesStreamedFilePayloa" +
-      "d\022\033\n\005price\030\001 \001(\0132\014.PriceEntityb\006proto3"
+      "d\022\033\n\005price\030\001 \001(\0132\014.PriceEntityB\007\n\005protob" +
+      "\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
         new com.google.protobuf.Descriptors.FileDescriptor[] {
-          PriceEntityOuterClass.getDescriptor(),
+          proto.PriceEntityOuterClass.getDescriptor(),
         });
     internal_static_PricesStreamedFilePayload_descriptor =
       getDescriptor().getMessageTypes().get(0);
@@ -654,7 +657,7 @@ public final class PricesStreamedFilePayloadOuterClass {
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_PricesStreamedFilePayload_descriptor,
         new java.lang.String[] { "Price", });
-    PriceEntityOuterClass.getDescriptor();
+    proto.PriceEntityOuterClass.getDescriptor();
   }
 
   // @@protoc_insertion_point(outer_class_scope)

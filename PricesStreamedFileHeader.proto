@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-
+option java_package = "proto";
 message PricesStreamedFileHeader {
     string request_id = 1;
     string timestamp = 2;

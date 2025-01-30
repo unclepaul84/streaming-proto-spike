@@ -1,5 +1,5 @@
 syntax = "proto3";
-
+option java_package = "proto";
 import "PriceEntity.proto";
 
 message PricesStreamedFilePayload {

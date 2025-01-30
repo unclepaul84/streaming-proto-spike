@@ -1,5 +1,5 @@
 syntax = "proto3";
-
+option java_package = "proto";
 message PriceEntity {
     int32 id = 1;
     string name = 2;
