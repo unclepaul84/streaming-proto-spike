@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+
+message PricesStreamedFileHeader {
+    string request_id = 1;
+    string timestamp = 2;
+    string source = 3;
+    
+}

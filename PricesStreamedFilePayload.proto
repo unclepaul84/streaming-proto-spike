@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+import "PriceEntity.proto";
+
+message PricesStreamedFilePayload {
+     PriceEntity price = 1;
+}

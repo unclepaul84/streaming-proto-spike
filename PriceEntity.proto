@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+message PriceEntity {
+    int32 id = 1;
+    string name = 2;
+    double price = 3;
+    string currency = 4;
+}

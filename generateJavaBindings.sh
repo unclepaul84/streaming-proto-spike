@@ -1,0 +1,1 @@
+./protoc/bin/protoc --java_out=src/main PricesStreamedFileHeader.proto PricesStreamedFilePayload.proto PriceEntity.proto
