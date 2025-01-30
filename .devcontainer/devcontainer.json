@@ -8,8 +8,8 @@
 	"features": {
 	  "ghcr.io/devcontainers/features/java:1": {
 		"version": "none",
-		"installMaven": "true",
-		"installGradle": "false"
+		"installMaven": "false",
+		"installGradle": "true"
 	  },
 	  "ghcr.io/devcontainers-contrib/features/ant-sdkman:2": {}
 	},
@@ -26,8 +26,10 @@
 	  "vscode": {
 		// Add the IDs of extensions you want installed when the container is created.
 		"extensions": [
-		  "streetsidesoftware.code-spell-checker",
-		  "vscjava.vscode-java-pack"
+			"streetsidesoftware.code-spell-checker",
+			"vscjava.vscode-java-pack",
+			"zxh404.vscode-proto3",
+			"GitHub.copilot"
 		]
 	  }
 	}
