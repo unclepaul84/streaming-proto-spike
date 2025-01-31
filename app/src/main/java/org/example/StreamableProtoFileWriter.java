@@ -4,16 +4,26 @@ import java.io.DataOutputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import com.google.protobuf.Descriptors.Descriptor;
 
 public class StreamableProtoFileWriter<H extends com.google.protobuf.GeneratedMessageV3, P extends com.google.protobuf.GeneratedMessageV3>
         implements AutoCloseable {
   
     private final DataOutputStream fi;
 
-    public StreamableProtoFileWriter(String file, H header) throws FileNotFoundException, IOException {
+    public StreamableProtoFileWriter(String file,H header) throws FileNotFoundException, IOException,IllegalArgumentException {
 
-        this.fi = new DataOutputStream( new FileOutputStream(file));
-        
+        if (file == null) {
+            throw new IllegalArgumentException("File path cannot be null");
+        }
+   
+        if (header == null) {
+            throw new IllegalArgumentException("Header cannot be null");
+        }
+       
+
+        this.fi = new DataOutputStream(new FileOutputStream(file));
+    
         this.fi.writeInt(StreamableProtoFileParser.MAGIC_BYTE);
 
         byte[] headerBytes = header.toByteArray();

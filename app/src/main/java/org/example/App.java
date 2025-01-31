@@ -8,96 +8,81 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
 import proto.*;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
 public class App {
-    public String getGreeting() {
-        return "Hello World!";
-    }
+  
 
     public static void main(String[] args) throws Exception {
 
-        List<PriceEntityOuterClass.PriceEntity> priceEntities = new ArrayList<>();
+        PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader header = PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader
+                .newBuilder()
+                .setSource("MyApp")
+                .build();
 
-        for (int i = 0; i < 10; i++) {
+        var writer = new StreamableProtoFileWriter<PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader, PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload>(
+                "price_entities.bin", header);
+
+        for (int i = 0; i < 300000000; i++) {
+
             PriceEntityOuterClass.PriceEntity priceEntity = PriceEntityOuterClass.PriceEntity.newBuilder()
                     .setPrice(100 + i)
                     .setCurrency("USD")
                     .build();
-            priceEntities.add(priceEntity);
-        }
-   
-   
-    // Convert priceEntity to JSON using Google Protobuf library
-        String json = JsonFormat.printer().print(priceEntities.get(0));
-        System.out.println(json);
-        System.out.println(new App().getGreeting());
 
-    
-      
-        StreamableProtoFileWriter<PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader, PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload> writer = null;
-
-
-PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader header = PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader.newBuilder()
-                .setSource("MyApp")
-                .build();
-
-        try {
-            writer = new StreamableProtoFileWriter<PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader, PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload>("price_entities.bin", header);
-            for (PriceEntityOuterClass.PriceEntity priceEntity : priceEntities) {
-                PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload payload = PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload.newBuilder()
-                        .setPrice(priceEntity)
-                        .build();
-                writer.Write(payload);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                writer.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload payload = PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload
+                    .newBuilder()
+                    .setPrice(priceEntity)
+                    .build();
+            writer.Write(payload);
         }
 
+        writer.close();
+        
+        // Convert priceEntity to JSON using Google Protobuf library
+        // String json = JsonFormat.printer().print(priceEntities.get(0));
+        // System.out.println(json);
+        // System.out.println(new App().getGreeting());
+
+/*
         // Read price entities from the file
         StreamableProtoFileParser<PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader, PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload> parser = null;
         try {
-            parser = new StreamableProtoFileParser<PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader, PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload>("price_entities.bin", t -> {
-				try {
-					return PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader.parseFrom(t);
-				} catch (InvalidProtocolBufferException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-                   throw new RuntimeException(e);
-				}
-                               
-			}, h -> {
-				try {
-					return PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload.parseFrom(h);
-				} catch (InvalidProtocolBufferException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-                    throw new RuntimeException(e);
-				}
-			});
+            parser = new StreamableProtoFileParser<PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader, PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload>(
+                    "price_entities.bin", t -> {
+                        try {
+                            return PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader.parseFrom(t);
+                        } catch (InvalidProtocolBufferException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                            throw new RuntimeException(e);
+                        }
+
+                    }, h -> {
+                        try {
+                            return PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload.parseFrom(h);
+                        } catch (InvalidProtocolBufferException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                            throw new RuntimeException(e);
+                        }
+                    });
             var enumerator = parser.GetPayloadEnumerator();
             PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader parsedHeader = enumerator.GetHeader();
             System.out.println(JsonFormat.printer().print(parsedHeader));
             while (true) {
                 PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload payload = enumerator.GetNextPayload();
-                
-                if(payload ==null) break;
+
+                if (payload == null)
+                    break;
 
                 System.out.println(JsonFormat.printer().print(payload));
             }
-        } catch (IOException  e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
-
+*/
     }
 }
-
