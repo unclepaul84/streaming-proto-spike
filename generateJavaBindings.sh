@@ -1,1 +1,1 @@
-./protoc/bin/protoc --java_out=app/src/main/java PricesStreamedFileHeader.proto PricesStreamedFilePayload.proto PriceEntity.proto StreamedFileHeaderEnvelope.proto
+./protoc/bin/protoc --java_out=app/src/main/java --python_out=python-app PricesStreamedFileHeader.proto PricesStreamedFilePayload.proto PriceEntity.proto

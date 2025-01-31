@@ -29,7 +29,8 @@
 			"streetsidesoftware.code-spell-checker",
 			"vscjava.vscode-java-pack",
 			"zxh404.vscode-proto3",
-			"GitHub.copilot"
+			"GitHub.copilot",
+			"ms-python.python"
 		]
 	  }
 	}

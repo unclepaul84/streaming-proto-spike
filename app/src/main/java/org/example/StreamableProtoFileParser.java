@@ -16,8 +16,16 @@ public class StreamableProtoFileParser<H,P> {
     private final Function<byte[],P> protoFactory;
     private final String file;
 
-    public StreamableProtoFileParser(String file,  Function<byte[],H> headerFactory, Function<byte[],P> protoFactory) throws com.google.protobuf.InvalidProtocolBufferException  {
-        
+    public StreamableProtoFileParser(String file,  Function<byte[],H> headerFactory, Function<byte[],P> protoFactory) throws com.google.protobuf.InvalidProtocolBufferException,IllegalArgumentException  {
+        if (file == null) {
+            throw new IllegalArgumentException("file cannot be null");
+        }
+        if (headerFactory == null) {
+            throw new IllegalArgumentException("headerFactory cannot be null");
+        }
+        if (protoFactory == null) {
+            throw new IllegalArgumentException("protoFactory cannot be null");
+        }
         this.headerFactory = headerFactory;
         this.protoFactory = protoFactory;
         this.file = file;

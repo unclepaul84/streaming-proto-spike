@@ -38,10 +38,21 @@ public final class PriceEntityOuterClass {
         getNameBytes();
 
     /**
-     * <code>double price = 3;</code>
-     * @return The price.
+     * <code>repeated double prices = 3;</code>
+     * @return A list containing the prices.
      */
-    double getPrice();
+    java.util.List<java.lang.Double> getPricesList();
+    /**
+     * <code>repeated double prices = 3;</code>
+     * @return The count of prices.
+     */
+    int getPricesCount();
+    /**
+     * <code>repeated double prices = 3;</code>
+     * @param index The index of the element to return.
+     * @return The prices at the given index.
+     */
+    double getPrices(int index);
 
     /**
      * <code>string currency = 4;</code>
@@ -69,6 +80,7 @@ public final class PriceEntityOuterClass {
     }
     private PriceEntity() {
       name_ = "";
+      prices_ = emptyDoubleList();
       currency_ = "";
     }
 
@@ -142,16 +154,35 @@ public final class PriceEntityOuterClass {
       }
     }
 
-    public static final int PRICE_FIELD_NUMBER = 3;
-    private double price_ = 0D;
+    public static final int PRICES_FIELD_NUMBER = 3;
+    @SuppressWarnings("serial")
+    private com.google.protobuf.Internal.DoubleList prices_ =
+        emptyDoubleList();
     /**
-     * <code>double price = 3;</code>
-     * @return The price.
+     * <code>repeated double prices = 3;</code>
+     * @return A list containing the prices.
      */
     @java.lang.Override
-    public double getPrice() {
-      return price_;
+    public java.util.List<java.lang.Double>
+        getPricesList() {
+      return prices_;
     }
+    /**
+     * <code>repeated double prices = 3;</code>
+     * @return The count of prices.
+     */
+    public int getPricesCount() {
+      return prices_.size();
+    }
+    /**
+     * <code>repeated double prices = 3;</code>
+     * @param index The index of the element to return.
+     * @return The prices at the given index.
+     */
+    public double getPrices(int index) {
+      return prices_.getDouble(index);
+    }
+    private int pricesMemoizedSerializedSize = -1;
 
     public static final int CURRENCY_FIELD_NUMBER = 4;
     @SuppressWarnings("serial")
@@ -206,14 +237,19 @@ public final class PriceEntityOuterClass {
     @java.lang.Override
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
+      getSerializedSize();
       if (id_ != 0) {
         output.writeInt32(1, id_);
       }
       if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(name_)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 2, name_);
       }
-      if (java.lang.Double.doubleToRawLongBits(price_) != 0) {
-        output.writeDouble(3, price_);
+      if (getPricesList().size() > 0) {
+        output.writeUInt32NoTag(26);
+        output.writeUInt32NoTag(pricesMemoizedSerializedSize);
+      }
+      for (int i = 0; i < prices_.size(); i++) {
+        output.writeDoubleNoTag(prices_.getDouble(i));
       }
       if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(currency_)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 4, currency_);
@@ -234,9 +270,16 @@ public final class PriceEntityOuterClass {
       if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(name_)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, name_);
       }
-      if (java.lang.Double.doubleToRawLongBits(price_) != 0) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeDoubleSize(3, price_);
+      {
+        int dataSize = 0;
+        dataSize = 8 * getPricesList().size();
+        size += dataSize;
+        if (!getPricesList().isEmpty()) {
+          size += 1;
+          size += com.google.protobuf.CodedOutputStream
+              .computeInt32SizeNoTag(dataSize);
+        }
+        pricesMemoizedSerializedSize = dataSize;
       }
       if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(currency_)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, currency_);
@@ -260,9 +303,8 @@ public final class PriceEntityOuterClass {
           != other.getId()) return false;
       if (!getName()
           .equals(other.getName())) return false;
-      if (java.lang.Double.doubleToLongBits(getPrice())
-          != java.lang.Double.doubleToLongBits(
-              other.getPrice())) return false;
+      if (!getPricesList()
+          .equals(other.getPricesList())) return false;
       if (!getCurrency()
           .equals(other.getCurrency())) return false;
       if (!getUnknownFields().equals(other.getUnknownFields())) return false;
@@ -280,9 +322,10 @@ public final class PriceEntityOuterClass {
       hash = (53 * hash) + getId();
       hash = (37 * hash) + NAME_FIELD_NUMBER;
       hash = (53 * hash) + getName().hashCode();
-      hash = (37 * hash) + PRICE_FIELD_NUMBER;
-      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
-          java.lang.Double.doubleToLongBits(getPrice()));
+      if (getPricesCount() > 0) {
+        hash = (37 * hash) + PRICES_FIELD_NUMBER;
+        hash = (53 * hash) + getPricesList().hashCode();
+      }
       hash = (37 * hash) + CURRENCY_FIELD_NUMBER;
       hash = (53 * hash) + getCurrency().hashCode();
       hash = (29 * hash) + getUnknownFields().hashCode();
@@ -418,7 +461,7 @@ public final class PriceEntityOuterClass {
         bitField0_ = 0;
         id_ = 0;
         name_ = "";
-        price_ = 0D;
+        prices_ = emptyDoubleList();
         currency_ = "";
         return this;
       }
@@ -460,7 +503,8 @@ public final class PriceEntityOuterClass {
           result.name_ = name_;
         }
         if (((from_bitField0_ & 0x00000004) != 0)) {
-          result.price_ = price_;
+          prices_.makeImmutable();
+          result.prices_ = prices_;
         }
         if (((from_bitField0_ & 0x00000008) != 0)) {
           result.currency_ = currency_;
@@ -519,8 +563,16 @@ public final class PriceEntityOuterClass {
           bitField0_ |= 0x00000002;
           onChanged();
         }
-        if (other.getPrice() != 0D) {
-          setPrice(other.getPrice());
+        if (!other.prices_.isEmpty()) {
+          if (prices_.isEmpty()) {
+            prices_ = other.prices_;
+            prices_.makeImmutable();
+            bitField0_ |= 0x00000004;
+          } else {
+            ensurePricesIsMutable();
+            prices_.addAll(other.prices_);
+          }
+          onChanged();
         }
         if (!other.getCurrency().isEmpty()) {
           currency_ = other.currency_;
@@ -564,10 +616,22 @@ public final class PriceEntityOuterClass {
                 break;
               } // case 18
               case 25: {
-                price_ = input.readDouble();
-                bitField0_ |= 0x00000004;
+                double v = input.readDouble();
+                ensurePricesIsMutable();
+                prices_.addDouble(v);
                 break;
               } // case 25
+              case 26: {
+                int length = input.readRawVarint32();
+                int limit = input.pushLimit(length);
+                int alloc = length > 4096 ? 4096 : length;
+                ensurePricesIsMutable(alloc / 8);
+                while (input.getBytesUntilLimit() > 0) {
+                  prices_.addDouble(input.readDouble());
+                }
+                input.popLimit(limit);
+                break;
+              } // case 26
               case 34: {
                 currency_ = input.readStringRequireUtf8();
                 bitField0_ |= 0x00000008;
@@ -694,34 +758,92 @@ public final class PriceEntityOuterClass {
         return this;
       }
 
-      private double price_ ;
-      /**
-       * <code>double price = 3;</code>
-       * @return The price.
-       */
-      @java.lang.Override
-      public double getPrice() {
-        return price_;
+      private com.google.protobuf.Internal.DoubleList prices_ = emptyDoubleList();
+      private void ensurePricesIsMutable() {
+        if (!prices_.isModifiable()) {
+          prices_ = makeMutableCopy(prices_);
+        }
+        bitField0_ |= 0x00000004;
+      }
+      private void ensurePricesIsMutable(int capacity) {
+        if (!prices_.isModifiable()) {
+          prices_ = makeMutableCopy(prices_, capacity);
+        }
+        bitField0_ |= 0x00000004;
       }
       /**
-       * <code>double price = 3;</code>
-       * @param value The price to set.
+       * <code>repeated double prices = 3;</code>
+       * @return A list containing the prices.
+       */
+      public java.util.List<java.lang.Double>
+          getPricesList() {
+        prices_.makeImmutable();
+        return prices_;
+      }
+      /**
+       * <code>repeated double prices = 3;</code>
+       * @return The count of prices.
+       */
+      public int getPricesCount() {
+        return prices_.size();
+      }
+      /**
+       * <code>repeated double prices = 3;</code>
+       * @param index The index of the element to return.
+       * @return The prices at the given index.
+       */
+      public double getPrices(int index) {
+        return prices_.getDouble(index);
+      }
+      /**
+       * <code>repeated double prices = 3;</code>
+       * @param index The index to set the value at.
+       * @param value The prices to set.
        * @return This builder for chaining.
        */
-      public Builder setPrice(double value) {
+      public Builder setPrices(
+          int index, double value) {
 
-        price_ = value;
+        ensurePricesIsMutable();
+        prices_.setDouble(index, value);
         bitField0_ |= 0x00000004;
         onChanged();
         return this;
       }
       /**
-       * <code>double price = 3;</code>
+       * <code>repeated double prices = 3;</code>
+       * @param value The prices to add.
        * @return This builder for chaining.
        */
-      public Builder clearPrice() {
+      public Builder addPrices(double value) {
+
+        ensurePricesIsMutable();
+        prices_.addDouble(value);
+        bitField0_ |= 0x00000004;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated double prices = 3;</code>
+       * @param values The prices to add.
+       * @return This builder for chaining.
+       */
+      public Builder addAllPrices(
+          java.lang.Iterable<? extends java.lang.Double> values) {
+        ensurePricesIsMutable();
+        com.google.protobuf.AbstractMessageLite.Builder.addAll(
+            values, prices_);
+        bitField0_ |= 0x00000004;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated double prices = 3;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearPrices() {
+        prices_ = emptyDoubleList();
         bitField0_ = (bitField0_ & ~0x00000004);
-        price_ = 0D;
         onChanged();
         return this;
       }
@@ -875,9 +997,9 @@ public final class PriceEntityOuterClass {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\021PriceEntity.proto\"H\n\013PriceEntity\022\n\n\002id" +
-      "\030\001 \001(\005\022\014\n\004name\030\002 \001(\t\022\r\n\005price\030\003 \001(\001\022\020\n\010c" +
-      "urrency\030\004 \001(\tB\007\n\005protob\006proto3"
+      "\n\021PriceEntity.proto\"I\n\013PriceEntity\022\n\n\002id" +
+      "\030\001 \001(\005\022\014\n\004name\030\002 \001(\t\022\016\n\006prices\030\003 \003(\001\022\020\n\010" +
+      "currency\030\004 \001(\tB\007\n\005protob\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -888,7 +1010,7 @@ public final class PriceEntityOuterClass {
     internal_static_PriceEntity_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_PriceEntity_descriptor,
-        new java.lang.String[] { "Id", "Name", "Price", "Currency", });
+        new java.lang.String[] { "Id", "Name", "Prices", "Currency", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

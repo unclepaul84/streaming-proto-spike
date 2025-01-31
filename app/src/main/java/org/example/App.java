@@ -16,7 +16,7 @@ public class App {
   
 
     public static void main(String[] args) throws Exception {
-
+/* 
         PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader header = PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader
                 .newBuilder()
                 .setSource("MyApp")
@@ -25,10 +25,20 @@ public class App {
         var writer = new StreamableProtoFileWriter<PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader, PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload>(
                 "price_entities.bin", header);
 
-        for (int i = 0; i < 300000000; i++) {
 
-            PriceEntityOuterClass.PriceEntity priceEntity = PriceEntityOuterClass.PriceEntity.newBuilder()
-                    .setPrice(100 + i)
+        List<Double> prices = new ArrayList<Double>();
+        for (int i = 0; i < 10000; i++) {
+            prices.add(100.0 + i);
+        }
+
+
+        long totalBytesWritten = 0;
+        var startTime = System.currentTimeMillis();
+
+        for (int i = 0; i < 500000; i++) {
+
+            var priceEntity = PriceEntityOuterClass.PriceEntity.newBuilder()
+                    .addAllPrices(prices)
                     .setCurrency("USD")
                     .build();
 
@@ -36,7 +46,22 @@ public class App {
                     .newBuilder()
                     .setPrice(priceEntity)
                     .build();
-            writer.Write(payload);
+           var bytesWritten = writer.Write(payload);
+
+           if (i % 10000 == 0) {
+               long currentTime = System.currentTimeMillis();
+               long elapsedTime = currentTime - startTime;
+               double averageBytesPerSecond = (double) totalBytesWritten / (elapsedTime / 1000.0) / (1024.0 * 1024.0);
+               System.out.println("Average MB written per second: " + String.format("%.1f", averageBytesPerSecond));
+               startTime = currentTime;
+               totalBytesWritten = 0;
+           }
+
+           if(i % 100000 == 0) {
+               System.out.println("Written " + i + " records");
+           }
+
+           totalBytesWritten += bytesWritten;
         }
 
         writer.close();
@@ -45,8 +70,10 @@ public class App {
         // String json = JsonFormat.printer().print(priceEntities.get(0));
         // System.out.println(json);
         // System.out.println(new App().getGreeting());
+*/
 
-/*
+   int recordCount = 0;
+
         // Read price entities from the file
         StreamableProtoFileParser<PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader, PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload> parser = null;
         try {
@@ -75,14 +102,23 @@ public class App {
             while (true) {
                 PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload payload = enumerator.GetNextPayload();
 
+                recordCount++;
+
+                if (recordCount % 100000 == 0) {
+                    System.out.println("Read " + recordCount + " records");
+                }
+
                 if (payload == null)
                     break;
 
-                System.out.println(JsonFormat.printer().print(payload));
+              //  System.out.println(JsonFormat.printer().print(payload));
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
-*/
+
+
+
+
     }
 }

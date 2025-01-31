@@ -3,6 +3,6 @@ option java_package = "proto";
 message PriceEntity {
     int32 id = 1;
     string name = 2;
-    double price = 3;
+    repeated double prices = 3;
     string currency = 4;
 }

@@ -1,5 +1,6 @@
 package org.example;
 
+import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -21,8 +22,7 @@ public class StreamableProtoFileWriter<H extends com.google.protobuf.GeneratedMe
             throw new IllegalArgumentException("Header cannot be null");
         }
        
-
-        this.fi = new DataOutputStream(new FileOutputStream(file));
+        this.fi = new DataOutputStream(new BufferedOutputStream( new FileOutputStream(file), 64 * 1024));
     
         this.fi.writeInt(StreamableProtoFileParser.MAGIC_BYTE);
 
@@ -33,10 +33,12 @@ public class StreamableProtoFileWriter<H extends com.google.protobuf.GeneratedMe
 
     }
 
-    public void Write(P payload) throws IOException {
+    public int Write(P payload) throws IOException {
         byte[] payloadBytes = payload.toByteArray();
         this.fi.writeInt(payloadBytes.length);
         this.fi.write(payloadBytes);
+
+        return payloadBytes.length;
     }
 
     public void close() throws Exception {
