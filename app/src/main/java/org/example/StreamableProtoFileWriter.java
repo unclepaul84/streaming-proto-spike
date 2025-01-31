@@ -1,29 +1,31 @@
 package org.example;
 
+import java.io.DataOutputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
 public class StreamableProtoFileWriter<H extends com.google.protobuf.GeneratedMessageV3, P extends com.google.protobuf.GeneratedMessageV3>
         implements AutoCloseable {
-
-    private final FileOutputStream fi;
+  
+    private final DataOutputStream fi;
 
     public StreamableProtoFileWriter(String file, H header) throws FileNotFoundException, IOException {
 
-        this.fi = new FileOutputStream(file);
+        this.fi = new DataOutputStream( new FileOutputStream(file));
         
-        this.fi.write(((int)0x1973));
+        this.fi.writeInt(StreamableProtoFileParser.MAGIC_BYTE);
+
         byte[] headerBytes = header.toByteArray();
 
-        this.fi.write(headerBytes.length);
+        this.fi.writeInt(headerBytes.length);
         this.fi.write(headerBytes);
 
     }
 
     public void Write(P payload) throws IOException {
         byte[] payloadBytes = payload.toByteArray();
-        this.fi.write(payloadBytes.length);
+        this.fi.writeInt(payloadBytes.length);
         this.fi.write(payloadBytes);
     }
 

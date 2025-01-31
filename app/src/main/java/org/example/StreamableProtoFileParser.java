@@ -1,5 +1,7 @@
 package org.example;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.function.Function;
@@ -22,31 +24,31 @@ public class StreamableProtoFileParser<H,P> {
 
     }
 
-    public StreamablePayloadEnumerator<H,P> GetPayloadEnumerator() throws IOException {
-        FileInputStream fi = new FileInputStream(this.file);
-        return new StreamablePayloadEnumerator<H,P>(fi, this.headerFactory, this.protoFactory);
+    public StreamablePayloadEnumerator GetPayloadEnumerator() throws IOException {
+        var fi = new DataInputStream(new FileInputStream(this.file));
+        return new StreamablePayloadEnumerator(fi, this.headerFactory, this.protoFactory);
     }
 
-    public class StreamablePayloadEnumerator<H,P> implements AutoCloseable {
+    public class StreamablePayloadEnumerator implements AutoCloseable {
 
         
 
-        private final Function<byte[],H> headerFactory;
+       
         private final Function<byte[],P> protoFactory;
-        private final FileInputStream fi;
+        private final DataInputStream fi;
         private H header;
-        private StreamablePayloadEnumerator(FileInputStream fi, Function<byte[],H> headerFactory, Function<byte[],P> protoFactory) throws IOException, InvalidProtocolBufferException {
-            this.headerFactory = headerFactory;
+        private StreamablePayloadEnumerator(DataInputStream fi, Function<byte[],H> headerFactory, Function<byte[],P> protoFactory) throws IOException, InvalidProtocolBufferException {
+            
             this.protoFactory = protoFactory;
             this.fi = fi;
 
-            int magicByte = fi.read();
+            int magicByte = fi.readInt();
 
-            if (magicByte != 0x1973) {
+            if (magicByte != StreamableProtoFileParser.MAGIC_BYTE) {
                 throw new IOException("Invalid magic byte");
             }
 
-            int headerLength = fi.read();
+            int headerLength = fi.readInt();
 
             byte[] headerBytes = new byte[headerLength];
             
@@ -61,7 +63,7 @@ public class StreamableProtoFileParser<H,P> {
 
         public P GetNextPayload() throws IOException,InvalidProtocolBufferException {
             if (this.fi.available() > 0) {
-                int length = this.fi.read();
+                int length = this.fi.readInt();
                 byte[] data = new byte[length];
                 this.fi.read(data);
                 return protoFactory.apply(data);
