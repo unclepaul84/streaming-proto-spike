@@ -1,7 +1,7 @@
 package org.example;
 
+import java.io.BufferedInputStream;
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.function.Function;
@@ -33,7 +33,7 @@ public class StreamableProtoFileParser<H,P> {
     }
 
     public StreamablePayloadEnumerator GetPayloadEnumerator() throws IOException {
-        var fi = new DataInputStream(new FileInputStream(this.file));
+        var fi = new DataInputStream( new BufferedInputStream( new FileInputStream(this.file), 64 * 1024));
         return new StreamablePayloadEnumerator(fi, this.headerFactory, this.protoFactory);
     }
 

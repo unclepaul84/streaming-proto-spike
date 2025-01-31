@@ -42,6 +42,7 @@ public class StreamableProtoFileWriter<H extends com.google.protobuf.GeneratedMe
     }
 
     public void close() throws Exception {
+        fi.flush();
         fi.close();
     }
 }
