@@ -10,6 +10,7 @@ Protocol Buffer library is [not designed](https://protobuf.dev/programming-guide
 ### File Byte Layout
 * All integers are 4 byte, Big Endian encoded
 * Magic Byte must be constant 0x1973
+* Header and Payload are protobuf serialized byte arrays
 
 ```mermaid
 
