@@ -18,7 +18,7 @@
 	// "forwardPorts": [],
   
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "echo \"This file was added by the postCreateCommand.\" > TEMP.md",
+	"postCreateCommand": "",
   
 	// Configure tool-specific properties.
 	"customizations": {

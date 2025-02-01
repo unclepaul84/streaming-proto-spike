@@ -1,6 +1,7 @@
 # Compiled class file
 *.class
 venv
+__pycache__
 # Log file
 *.log
 
