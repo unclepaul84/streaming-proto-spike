@@ -1,7 +1,5 @@
 import struct
-
-from google.protobuf import message as proto_message
-
+from google.protobuf.message import Message
 
 class StreamableProtoFileParser:
     MAGIC_BYTE = 0x1973
@@ -13,6 +11,16 @@ class StreamableProtoFileParser:
         self.file_name = file_name
         self.file = open(self.file_name, "rb")
         self.header = self.header_proto_message_class()
+
+
+        if not isinstance(self.header, Message):
+            raise ValueError("header_proto_instance must be a protobuf message")
+        
+        payload_test = self.payload_proto_message_class()
+        
+        if not isinstance(payload_test, Message):
+            raise ValueError("payload_proto_instance must be a protobuf class")
+
         magic_byte = struct.unpack('>i', self.file.read(4))[0]
         if magic_byte != self.MAGIC_BYTE:
             raise ValueError("Invalid magic byte")    

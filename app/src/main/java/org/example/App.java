@@ -66,16 +66,14 @@ public class App {
 
                 // Convert priceEntity to JSON using Google Protobuf library
                 // String json = JsonFormat.printer().print(priceEntities.get(0));
-                // System.out.println(json);
-                // System.out.println(new App().getGreeting());
-
+    
                 int recordCount = 0;
 
                 // Read price entities from the file
                 StreamableProtoFileParser<PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader, PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload> parser = null;
                 try {
                         parser = new StreamableProtoFileParser<PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader, PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload>(
-                                        "price_entities.bin", t -> {
+                                        "../python-app/price_entities.bin", t -> {
                                                 try {
                                                         return PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader
                                                                         .parseFrom(t);
