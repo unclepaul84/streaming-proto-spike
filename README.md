@@ -5,7 +5,7 @@ Platform/language neutral Protocol Buffer based file format specification design
 Protocol Buffer library is [not designed](https://protobuf.dev/programming-guides/techniques/#large-data) for parsing large messages.
 
 ### Solution
- File format specification which allows to define custom file formats based on length-prefixed, protobuf serialized payloads. This allows files to be read/written in a streaming fasion, thus not requiring to hold the entire dataset in physical memory of the process.
+ File format specification which allows to define custom dataset file formats based on length-prefixed, protobuf serialized payloads. This allows files to be read/written in a streaming fasion, thus not requiring to hold the entire dataset in physical memory of the process.
 
 ### File Byte Layout
 * All integers are 4 byte, Big Endian encoded
