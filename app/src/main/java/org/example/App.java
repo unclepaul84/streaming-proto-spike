@@ -18,7 +18,7 @@ public class App {
 
                 PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader header = PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader
                                 .newBuilder()
-                                .setSource("MyApp")
+                                .setSource("Java App")
                                 .build();
 
                 var writer = new StreamableProtoFileWriter<PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader, PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload>(
