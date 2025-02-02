@@ -1,5 +1,5 @@
 # streaming-proto-file-spike
-Platform/language neutral Protocol Buffer based file format specification which is stream writable/readable.
+Platform/language neutral Protocol Buffer based file format specification designed is stream writable/readable.
 
 ### Problem Statement
 Protocol Buffer library is [not designed](https://protobuf.dev/programming-guides/techniques/#large-data) for parsing large messages.
