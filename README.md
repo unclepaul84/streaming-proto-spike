@@ -28,7 +28,7 @@ packet-beta
 ```
 
 ### Supported Languages
-Any language which supports reading/writing files as stream and for which protobuf bindings can be generated.
+Any language which supports reading/writing files as a stream and for which protobuf bindings can be generated.
 
 #### Tested Languages
 * Java
