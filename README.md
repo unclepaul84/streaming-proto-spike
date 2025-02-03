@@ -8,9 +8,9 @@ Protocol Buffer library is [not designed](https://protobuf.dev/programming-guide
  File format specification which allows to define custom dataset file formats based on length-prefixed, protobuf serialized payloads. This allows files to be read/written in a streaming fasion, thus not requiring to hold the entire dataset in physical memory of the process.
 
 ### File Byte Layout
-* All integers are 4 byte, Big Endian encoded
+* All integers are 4 byte, Signed, Big Endian encoded
 * Magic Byte must be constant 0x1973
-* Header and Payload are protobuf serialized byte arrays
+* Header and Payload are opaque, protobuf serialized byte arrays
 
 ```mermaid
 
