@@ -21,7 +21,7 @@ public class App {
                                 .setSource("Java App")
                                 .build();
 
-                var writer = new StreamableProtoFileWriter<PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader, PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload>(
+                var writer = new PricesStreamedFileWriter(
                                 "price_entities.bin", header);
 
                 List<Double> prices = new ArrayList<Double>();
