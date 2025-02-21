@@ -20,11 +20,11 @@ title: "File Byte Layout"
 packet-beta
 0-4: "Magic Byte(Int32)[0x1973]"
 5-9: "Header Length (Int32)"
-10-19: "Header content (variable)"
-20-24: "Payload length (Int32)"
-25-40: "Payload (variable)"
-41-45: "Payload length (Int32)"
-46-63: "Payload (variable)"
+10-31: "Header content (variable)"
+32-36: "Payload length (Int32)"
+37-63: "Payload (variable)"
+64-68: "Payload length (Int32)"
+69-95: "Payload (variable)"
 ```
 
 ### Supported Languages
