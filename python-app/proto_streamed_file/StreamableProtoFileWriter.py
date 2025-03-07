@@ -11,6 +11,9 @@ class StreamableProtoFileWriter:
         
         if file_name is None:
             raise ValueError("file_name cannot be None")
+        if not file_name.endswith('.binpb'):
+            raise ValueError("file_name must end with .binpb")
+        
         self.file_name = file_name
         self.file = open(self.file_name, "wb")
       

@@ -7,7 +7,7 @@ __pycache__
 *.bin
 # BlueJ files
 *.ctxt
-
+*.binpb
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
 

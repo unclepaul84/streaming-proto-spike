@@ -7,7 +7,7 @@ from proto_streamed_file.StreamableProtoFileWriter import StreamableProtoFileWri
 header = PricesStreamedFileHeader()
 header.source = "python-app"
 
-with StreamableProtoFileWriter('price_entities_python.bin', header) as writer:
+with StreamableProtoFileWriter('price_entities_python.binpb', header) as writer:
     
 
 

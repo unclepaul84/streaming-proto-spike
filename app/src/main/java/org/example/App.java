@@ -15,8 +15,8 @@ import java.util.List;
 public class App {
 
         public static void main(String[] args) throws Exception {
-                String write_File = "price_entities_java.bin";
-                String read_File = "price_entities_python.bin";
+                String write_File = "price_entities_java.binpb";
+                String read_File = "price_entities_python.binpb";
                
                 PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader header = PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader
                                 .newBuilder()

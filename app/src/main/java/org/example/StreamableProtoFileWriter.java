@@ -22,7 +22,9 @@ public class StreamableProtoFileWriter<H extends com.google.protobuf.GeneratedMe
         if (header == null) {
             throw new IllegalArgumentException("Header cannot be null");
         }
-
+        if (!file.endsWith(".binpb")) {
+            throw new IllegalArgumentException("File must end with .binpb");
+        }
         this.fi = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file), 64 * 1024));
 
         this.fi.writeInt(StreamableProtoFileParser.MAGIC_BYTE);
