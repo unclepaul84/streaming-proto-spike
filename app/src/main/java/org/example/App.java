@@ -15,14 +15,16 @@ import java.util.List;
 public class App {
 
         public static void main(String[] args) throws Exception {
-
+                String write_File = "price_entities_java.bin";
+                String read_File = "price_entities_python.bin";
+               
                 PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader header = PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader
                                 .newBuilder()
                                 .setSource("Java App")
                                 .build();
 
                 var writer = new PricesStreamedFileWriter(
-                                "price_entities.bin", header);
+                        write_File, header);
 
                 List<Double> prices = new ArrayList<Double>();
                 for (int i = 0; i < 10000; i++) {
@@ -73,7 +75,7 @@ public class App {
                 StreamableProtoFileParser<PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader, PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload> parser = null;
                 try {
                         parser = new StreamableProtoFileParser<PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader, PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload>(
-                                        "../python-app/price_entities.bin", t -> {
+                                read_File, t -> {
                                                 try {
                                                         return PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader
                                                                         .parseFrom(t);

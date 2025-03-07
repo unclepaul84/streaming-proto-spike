@@ -7,13 +7,12 @@ from proto_streamed_file.StreamableProtoFileWriter import StreamableProtoFileWri
 header = PricesStreamedFileHeader()
 header.source = "python-app"
 
-with StreamableProtoFileWriter('price_entities_python.bin', header) as writer:
-    
+writer = StreamableProtoFileWriter('price_entities_python.bin', header)
 
 
-    payload = PricesStreamedFilePayload()
-    payload.price.name = "AAPL"
-    payload.price.prices.append(100.0)
+payload = PricesStreamedFilePayload()
+payload.price.name = "AAPL"
+payload.price.prices.append(100.0)
 
-    writer.writePayload(payload)
+writer.writePayload(payload)
 

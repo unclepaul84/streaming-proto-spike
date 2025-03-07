@@ -11,6 +11,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 public class StreamableProtoFileParser<H,P> {
 
     public static final int MAGIC_BYTE = 0x1973;
+    public static final int FILE_SEAL_MARKER = -1;
 
     private final Function<byte[],H> headerFactory;
     private final Function<byte[],P> protoFactory;
@@ -41,7 +42,8 @@ public class StreamableProtoFileParser<H,P> {
 
         
 
-       
+        private boolean sealReached = false;    
+
         private final Function<byte[],P> protoFactory;
         private final DataInputStream fi;
         private H header;
@@ -70,11 +72,24 @@ public class StreamableProtoFileParser<H,P> {
         }
 
         public P GetNextPayload() throws IOException,InvalidProtocolBufferException {
+            if (sealReached) {
+                return null;
+            }
             if (this.fi.available() > 0) {
+                
                 int length = this.fi.readInt();
+
+                if (length == StreamableProtoFileParser.FILE_SEAL_MARKER) {
+                    sealReached = true;
+                    return null;
+                }
+
                 byte[] data = new byte[length];
                 this.fi.read(data);
                 return protoFactory.apply(data);
+            }
+            else if (!sealReached) {
+                throw new IOException("This file was not properly sealed! This suggests that the file was not fully written.");
             }
             return null;
         }

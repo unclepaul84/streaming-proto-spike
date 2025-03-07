@@ -4,7 +4,7 @@ venv
 __pycache__
 # Log file
 *.log
-
+*.bin
 # BlueJ files
 *.ctxt
 

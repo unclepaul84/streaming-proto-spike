@@ -25,6 +25,7 @@ packet-beta
 25-40: "Payload (variable)"
 41-45: "Payload length (Int32)"
 46-63: "Payload (variable)"
+64-68: "File Seal (Int32) [0xFFFFFFFF]"
 ```
 
 ### Supported Languages
