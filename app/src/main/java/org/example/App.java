@@ -6,8 +6,11 @@ package org.example;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
+import com.google.protobuf.DynamicMessage;
 import proto.*;
+import com.google.protobuf.Descriptors;
 
+import java.io.FileDescriptor;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -114,6 +117,13 @@ public class App {
 
                                 // System.out.println(JsonFormat.printer().print(payload));
                         }
+
+
+
+                   
+
+                       
+
                 } catch (IOException e) {
                         e.printStackTrace();
                 }

@@ -1,0 +1,22 @@
+
+‹
+PriceEntity.proto"e
+PriceEntity
+id (Rid
+name (	Rname
+prices (Rprices
+currency (	RcurrencyB
+protobproto3
+¢
+PricesStreamedFileHeader.proto"o
+PricesStreamedFileHeader
+
+request_id (	R	requestId
+	timestamp (	R	timestamp
+source (	RsourceB
+protobproto3
+†
+PricesStreamedFilePayload.protoPriceEntity.proto"?
+PricesStreamedFilePayload"
+price (2.PriceEntityRpriceB
+protobproto3
