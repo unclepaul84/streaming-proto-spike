@@ -18,14 +18,14 @@ Protocol Buffer library is [not designed](https://protobuf.dev/programming-guide
 title: "File Byte Layout"
 ---
 packet-beta
-0-4: "Magic Byte(Int32)[0x1973]"
-5-9: "Header Length (Int32)"
-10-19: "Header content (variable)"
-20-24: "Payload length (Int32)"
-25-40: "Payload (variable)"
-41-45: "Payload length (Int32)"
-46-63: "Payload (variable)"
-64-68: "File Seal (Int32) [0xFFFFFFFF]"
+0-3: "Magic Byte(Int32)[0x1973]"
+4-8: "Header Length (Int32)"
+9-18: "Header content (variable)"
+19-23: "Payload length (Int32)"
+24-39: "Payload (variable)"
+40-44: "Payload length (Int32)"
+45-62: "Payload (variable)"
+63-67: "File Seal (Int32) [0xFFFFFFFF]"
 ```
 
 ### Supported Languages
