@@ -30,3 +30,7 @@ replay_pid*
 # Ignore Gradle build output directory
 build
 price_entities.bin
+price.descr
+price.descr
+app/price_scenarios/index-segment-00.idx
+app/price_scenarios/values.dat

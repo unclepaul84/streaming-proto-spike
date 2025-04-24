@@ -1,0 +1,8 @@
+syntax = "proto3";
+option java_package = "proto";
+
+message PriceScenarios {
+  string underlyer = 1;
+  string instrumentSymbol = 2;
+  repeated double price = 3;
+}

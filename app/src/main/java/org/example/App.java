@@ -17,8 +17,49 @@ import java.util.List;
 
 public class App {
 
-        public static void main(String[] args) throws Exception {
-                String write_File = "price_entities_java.binpb";
+        public static void main(String[] args) throws Exception, com.google.protobuf.InvalidProtocolBufferException,IllegalArgumentException  {
+             
+             
+             
+             
+
+        // Create 10,000 PriceScenarios with 10,000 prices in each
+        List<PriceScenariosOuterClass.PriceScenarios> priceScenariosList = new ArrayList<>();
+
+ 
+        for (int i = 0; i < 10000; i++) {
+                var pc  = PriceScenariosOuterClass.PriceScenarios.newBuilder().setUnderlyer(("AAPL" + i)).setInstrumentSymbol(("AAPLDEC2023" + i));
+
+                for (int j = 0; j < 10000; j++) {
+                    
+                    pc.addPrice(j * 0.1);
+                }
+                priceScenariosList.add(pc.build());
+        
+
+        }
+
+        MMappedProtoHashMap<PriceScenariosOuterClass.PriceScenarios> priceScenariosMap = new MMappedProtoHashMap<>(
+                java.nio.file.Paths.get("price_scenarios"), bytes -> {
+                    try {
+                        return PriceScenariosOuterClass.PriceScenarios.parseFrom(bytes);
+                    } catch (InvalidProtocolBufferException e) {
+                        throw new RuntimeException("Failed to parse PriceScenarios", e);
+                    }
+                });
+
+                for (PriceScenariosOuterClass.PriceScenarios priceScenarios : priceScenariosList) {
+                        priceScenariosMap.put(priceScenarios.getInstrumentSymbol().getBytes(), priceScenarios);
+                }
+
+
+
+
+               // System.out.println(JsonFormat.printer().print(priceScenarios));
+
+                // Uncomment the following code to test file writing and reading
+             
+             /*    String write_File = "price_entities_java.binpb";
                 String read_File = "price_entities_python.binpb";
                
                 PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader header = PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader
@@ -127,6 +168,8 @@ public class App {
                 } catch (IOException e) {
                         e.printStackTrace();
                 }
+
+                */
 
         }
 }

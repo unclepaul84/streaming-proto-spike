@@ -7,6 +7,13 @@
 prices (Rprices
 currency (	RcurrencyB
 protobproto3
+™
+PriceScenarios.proto"p
+PriceScenarios
+	underlyer (	R	underlyer*
+instrumentSymbol (	RinstrumentSymbol
+price (RpriceB
+protobproto3
 ¢
 PricesStreamedFileHeader.proto"o
 PricesStreamedFileHeader
