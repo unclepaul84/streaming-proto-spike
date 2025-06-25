@@ -12,121 +12,83 @@ import com.google.protobuf.Descriptors;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.io.File;
 
 public class App {
 
         public static void main(String[] args) throws Exception {
-                String write_File = "price_entities_java.binpb";
-                String read_File = "price_entities_python.binpb";
-               
-                PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader header = PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader
-                                .newBuilder()
-                                .setSource("Java App")
-                                .build();
+        
+                  OnDiskBPlusTree tree = new OnDiskBPlusTree("btree.data");
 
-                var writer = new PricesStreamedFileWriter(
-                        write_File, header);
+  /*   tree.insert("apple".getBytes(), "red".getBytes());
+    tree.insert("apple".getBytes(), "green".getBytes());
+    tree.insert("banana".getBytes(), "yellow".getBytes());
 
-                List<Double> prices = new ArrayList<Double>();
-                for (int i = 0; i < 10000; i++) {
-                        prices.add(100.0 + i);
-                }
+    for (byte[] val : tree.search("apple".getBytes())) {
+        System.out.println("apple -> " + new String(val));
+    }
 
-                long totalBytesWritten = 0;
-                var startTime = System.currentTimeMillis();
-
-                for (int i = 0; i < 30000; i++) {
-
-                        var priceEntity = PriceEntityOuterClass.PriceEntity.newBuilder()
-                                        .addAllPrices(prices)
-                                        .setCurrency("USD")
-                                        .build();
-
-                        PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload payload = PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload
-                                        .newBuilder()
-                                        .setPrice(priceEntity)
-                                        .build();
-                        var bytesWritten = writer.Write(payload);
-
-                        if (i % 10000 == 0) {
-
-                                long elapsedTime = System.currentTimeMillis() - startTime;
-                                double averageBytesPerSecond = (double) totalBytesWritten / (elapsedTime /
-                                                1000.0) / (1024.0 * 1024.0);
-                                System.out.println("Average MB written per second: " + String.format("%.1f",
-                                                averageBytesPerSecond));
-
-                        }
-
-                        if (i % 100000 == 0) {
-                                System.out.println("Written " + i + " records");
-                        }
-
-                        totalBytesWritten += bytesWritten;
-                }
-
-                writer.close();
-
-                // Convert priceEntity to JSON using Google Protobuf library
-                // String json = JsonFormat.printer().print(priceEntities.get(0));
-    
-                int recordCount = 0;
-
-                // Read price entities from the file
-                StreamableProtoFileParser<PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader, PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload> parser = null;
-                try {
-                        parser = new StreamableProtoFileParser<PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader, PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload>(
-                                read_File, t -> {
-                                                try {
-                                                        return PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader
-                                                                        .parseFrom(t);
-                                                } catch (InvalidProtocolBufferException e) {
-                                                        // TODO Auto-generated catch block
-                                                        e.printStackTrace();
-                                                        throw new RuntimeException(e);
-                                                }
-
-                                        }, h -> {
-                                                try {
-                                                        return PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload
-                                                                        .parseFrom(h);
-                                                } catch (InvalidProtocolBufferException e) {
-                                                        // TODO Auto-generated catch block
-                                                        e.printStackTrace();
-                                                        throw new RuntimeException(e);
-                                                }
-                                        });
-                        var enumerator = parser.GetPayloadEnumerator();
-                        PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader parsedHeader = enumerator
-                                        .GetHeader();
-                        System.out.println(JsonFormat.printer().print(parsedHeader));
-                        while (true) {
-                                PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload payload = enumerator
-                                                .GetNextPayload();
-
-                                recordCount++;
-
-                                if (recordCount % 100000 == 0) {
-                                        System.out.println("Read " + recordCount + " records");
-                                }
-
-                                if (payload == null)
-                                        break;
-
-                                // System.out.println(JsonFormat.printer().print(payload));
-                        }
+    for (byte[] val : tree.search("banana".getBytes())) {
+        System.out.println("banana -> " + new String(val));
+    }*/
 
 
 
-                   
 
+
+              /*   OnDiskBTree tree = new OnDiskBTree("tree.index"); */
+   
+
+                 for (int i = 0; i < 5000 ; i++) {
+                        byte[] key = ("AAPL" + i).getBytes("UTF-8");
                        
+                        for (int j = 1; j < 100; j++) {
+                                byte[] value = intToByteArray(j);
+                                tree.insert(key, value); 
+                        }
+              
+                } 
 
-                } catch (IOException e) {
-                        e.printStackTrace();
-                }
 
+                  for (int i = 0; i < 10 ; i++) {
+                        
+                        byte[] key = ("AAPL" + i).getBytes("UTF-8");
+                       
+                      
+                               Iterable<byte[]> res =  tree.search(key);
+
+                               res.forEach(value -> {
+                                   int result = fromByteArray(value);
+                                   System.out.println("Found value: " + result);
+                               });
+                               
+                       
+                } 
+
+        //byte[] key = "AAPL".getBytes("UTF-8");
+       
+       // byte[] bytes = intToByteArray(123456789);
+        //tree.insert(key, bytes);
+         
+         //int result =  fromByteArray( tree.search(key).get(0));
+         //System.out.println("Inserting key: " + result);
         }
+
+public static final byte[] intToByteArray(int value) {
+    return new byte[] {
+            (byte)(value >>> 24),
+            (byte)(value >>> 16),
+            (byte)(value >>> 8),
+            (byte)value};
 }
+   public static final int fromByteArray(byte[] bytes) {
+     return ((bytes[0] & 0xFF) << 24) | 
+            ((bytes[1] & 0xFF) << 16) | 
+            ((bytes[2] & 0xFF) << 8 ) | 
+            ((bytes[3] & 0xFF) << 0 );
+}
+
+
+}
+

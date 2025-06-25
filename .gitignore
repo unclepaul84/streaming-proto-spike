@@ -30,3 +30,4 @@ replay_pid*
 # Ignore Gradle build output directory
 build
 price_entities.bin
+app/tree.index
