@@ -71,13 +71,33 @@ public class OnDiskBPlusTree implements AutoCloseable {
             List<LeafEntry> entries = readLeafEntries(buf);
             int idx = findKeyIndex(entries, key);
             if (idx != -1) {
-                appendToOverflow(entries.get(idx).overflowPage, value);
+                // Use tail pointer for fast append
+                LeafEntry entry = entries.get(idx);
+                long newTail = appendToOverflow(entry.overflowTailPage, value);
+                if (newTail != entry.overflowTailPage) {
+                    // Update tail pointer if a new page was added
+                    entry.overflowTailPage = newTail;
+                    writeLeafEntries(buf, entries);
+                    writePage(pageId, buf);
+                }
                 return null;
             }
 
             long overflow = allocateOverflow(value);
-            entries.add(new LeafEntry(key, overflow));
-            entries.sort(Comparator.comparing(e -> new ByteArrayWrapper(e.key)));
+            // Find correct insert position using binary search (no sort needed)
+            int insertPos = 0;
+            int left = 0, right = entries.size() - 1;
+            while (left <= right) {
+                int mid = (left + right) >>> 1;
+                int cmp = Arrays.compare(entries.get(mid).key, key);
+                if (cmp < 0) {
+                    left = mid + 1;
+                } else {
+                    right = mid - 1;
+                }
+            }
+            insertPos = left;
+            entries.add(insertPos, new LeafEntry(key, overflow, overflow));
 
             if (estimateLeafSize(entries) <= PAGE_SIZE - 5) {
                 writeLeafEntries(buf, entries);
@@ -85,17 +105,17 @@ public class OnDiskBPlusTree implements AutoCloseable {
                 return null;
             } else {
                 int splitIndex = entries.size() / 2;
-                List<LeafEntry> left = new ArrayList<>(entries.subList(0, splitIndex));
-                List<LeafEntry> right = new ArrayList<>(entries.subList(splitIndex, entries.size()));
-                writeLeafEntries(buf, left);
+                List<LeafEntry> leftList = new ArrayList<>(entries.subList(0, splitIndex));
+                List<LeafEntry> rightList = new ArrayList<>(entries.subList(splitIndex, entries.size()));
+                writeLeafEntries(buf, leftList);
                 writePage(pageId, buf);
 
                 long newRightPage = allocateLeafPage();
                 ByteBuffer rightBuf = getPage(newRightPage);
-                writeLeafEntries(rightBuf, right);
+                writeLeafEntries(rightBuf, rightList);
                 writePage(newRightPage, rightBuf);
 
-                return new InsertResult(right.get(0).key, newRightPage, pageId);
+                return new InsertResult(rightList.get(0).key, newRightPage, pageId);
             }
         }
 
@@ -175,7 +195,9 @@ public class OnDiskBPlusTree implements AutoCloseable {
             throw new IllegalArgumentException("Key exceeds maximum size");
         }
         return () -> new Iterator<byte[]>() {
-            long overflowPage = findOverflow(getRootPageId(), key);
+            long[] overflowPages = findOverflow(getRootPageId(), key);
+            long overflowPage = (overflowPages != null) ? overflowPages[0] : -1;
+            long tailPage = (overflowPages != null) ? overflowPages[1] : -1;
             ByteBuffer buf = (overflowPage != -1) ? getPage(overflowPage) : null;
             int valueIndex = 0;
             int valueCount = 0;
@@ -238,16 +260,19 @@ public class OnDiskBPlusTree implements AutoCloseable {
         };
     }
 
-    private long findOverflow(long pageId, byte[] key) {
+    // Returns [head, tail] or null if not found
+    private long[] findOverflow(long pageId, byte[] key) {
         ByteBuffer buf = getPage(pageId);
         byte type = buf.get(0);
 
         if (type == NODE_LEAF) {
             List<LeafEntry> entries = readLeafEntries(buf);
             int idx = findKeyIndex(entries, key);
-            if (idx != -1)
-                return entries.get(idx).overflowPage;
-            return -1;
+            if (idx != -1) {
+                LeafEntry e = entries.get(idx);
+                return new long[]{e.overflowHeadPage, e.overflowTailPage};
+            }
+            return null;
         }
 
         if (type == NODE_INTERNAL) {
@@ -271,11 +296,13 @@ public class OnDiskBPlusTree implements AutoCloseable {
 
     static class LeafEntry {
         byte[] key;
-        long overflowPage;
+        long overflowHeadPage;
+        long overflowTailPage;
 
-        LeafEntry(byte[] key, long overflowPage) {
+        LeafEntry(byte[] key, long head, long tail) {
             this.key = key;
-            this.overflowPage = overflowPage;
+            this.overflowHeadPage = head;
+            this.overflowTailPage = tail;
         }
     }
 
@@ -392,44 +419,39 @@ public class OnDiskBPlusTree implements AutoCloseable {
         return pageId;
     }
 
-    // Always write value to a new overflow page if full, and chain correctly
-    private void appendToOverflow(long pageId, byte[] value) {
-        while (true) {
-            ByteBuffer buf = getPage(pageId);
-            int count = buf.getInt(1);
-            int pos = 5;
-            for (int i = 0; i < count; i++) {
-                buf.position(pos);
-                int len = buf.getInt();
-                pos = buf.position() + len;
-            }
-            int spaceNeeded = 4 + value.length;
-            if (pos + spaceNeeded + 8 <= PAGE_SIZE) { // 8 bytes for next pointer
-                buf.position(pos);
-                buf.putInt(value.length);
-                buf.put(value);
-                buf.putInt(1, count + 1);
-                writePage(pageId, buf);
-                break;
-            }
-            long next = buf.getLong(PAGE_SIZE - 8);
-            if (next == -1) {
-                long newPage = nextPageId++;
-                ByteBuffer newBuf = ByteBuffer.allocate(PAGE_SIZE);
-                newBuf.put(0, NODE_OVERFLOW);
-                newBuf.putInt(1, 1); // value count
-                newBuf.position(5);
-                newBuf.putInt(value.length);
-                newBuf.put(value);
-                newBuf.position(PAGE_SIZE - 8);
-                newBuf.putLong(-1L);
-                writePage(newPage, newBuf);
-                buf.position(PAGE_SIZE - 8);
-                buf.putLong(newPage);
-                writePage(pageId, buf);
-                break;
-            }
-            pageId = next;
+    // Returns new tail page id (may be same as input if no new page allocated)
+    private long appendToOverflow(long tailPageId, byte[] value) {
+        ByteBuffer buf = getPage(tailPageId);
+        int count = buf.getInt(1);
+        int pos = 5;
+        for (int i = 0; i < count; i++) {
+            buf.position(pos);
+            int len = buf.getInt();
+            pos = buf.position() + len;
+        }
+        int spaceNeeded = 4 + value.length;
+        if (pos + spaceNeeded + 8 <= PAGE_SIZE) { // 8 bytes for next pointer
+            buf.position(pos);
+            buf.putInt(value.length);
+            buf.put(value);
+            buf.putInt(1, count + 1);
+            writePage(tailPageId, buf);
+            return tailPageId;
+        } else {
+            long newPage = nextPageId++;
+            ByteBuffer newBuf = ByteBuffer.allocate(PAGE_SIZE);
+            newBuf.put(0, NODE_OVERFLOW);
+            newBuf.putInt(1, 1); // value count
+            newBuf.position(5);
+            newBuf.putInt(value.length);
+            newBuf.put(value);
+            newBuf.position(PAGE_SIZE - 8);
+            newBuf.putLong(-1L);
+            writePage(newPage, newBuf);
+            buf.position(PAGE_SIZE - 8);
+            buf.putLong(newPage);
+            writePage(tailPageId, buf);
+            return newPage;
         }
     }
 
@@ -442,8 +464,9 @@ public class OnDiskBPlusTree implements AutoCloseable {
             int klen = buf.getInt();
             byte[] key = new byte[klen];
             buf.get(key);
-            long overflow = buf.getLong();
-            entries.add(new LeafEntry(key, overflow));
+            long head = buf.getLong();
+            long tail = buf.getLong();
+            entries.add(new LeafEntry(key, head, tail));
             pos = buf.position();
         }
         return entries;
@@ -457,7 +480,8 @@ public class OnDiskBPlusTree implements AutoCloseable {
         for (LeafEntry e : entries) {
             buf.putInt(e.key.length);
             buf.put(e.key);
-            buf.putLong(e.overflowPage);
+            buf.putLong(e.overflowHeadPage);
+            buf.putLong(e.overflowTailPage);
         }
     }
 
@@ -500,7 +524,8 @@ public class OnDiskBPlusTree implements AutoCloseable {
     }
 
     private int estimateLeafSize(List<LeafEntry> entries) {
-        return 5 + entries.stream().mapToInt(e -> 4 + e.key.length + 8).sum();
+        // 4 bytes key len + key + 8 bytes head + 8 bytes tail per entry
+        return 5 + entries.stream().mapToInt(e -> 4 + e.key.length + 8 + 8).sum();
     }
 
     private int estimateInternalSize(List<InternalEntry> entries) {

@@ -26,7 +26,7 @@ public class App {
                   for (int i = 0; i < 5000 ; i++) {
                         byte[] key = ("AAPL" + i).getBytes("UTF-8");
                        
-                        for (int j = 0; j < 10000; j++) {
+                        for (int j = 0; j < 5000; j++) {
                             try {
                                 byte[] value = intToByteArray(j);
                                 tree.insert(key, value); 
@@ -57,7 +57,7 @@ public class App {
                                    
                                });
 
-                               if(sum.get() != 1000) {
+                               if(sum.get() != 5000) {
                                    System.out.println("Incorrect values found for key: " + new String(key) + " - Expected 1000, found " + sum.get());
                                }
                                
