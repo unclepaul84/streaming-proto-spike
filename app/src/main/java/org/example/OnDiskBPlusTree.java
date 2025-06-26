@@ -11,7 +11,7 @@ import java.util.*;
 public class OnDiskBPlusTree {
     static final int PAGE_SIZE = 4096;
     static final int MAX_KEY_SIZE = 128;
-    static final int MAX_VALUE_SIZE = 1024;
+    static final int MAX_VALUE_SIZE = 8;
 
     static final byte NODE_LEAF = 1;
     static final byte NODE_INTERNAL = 2;
@@ -218,13 +218,25 @@ public class OnDiskBPlusTree {
 
     // --- Page Access + Serialization
 private ByteBuffer getPage(int pageId) {
-    int offset = pageId * PAGE_SIZE;
-    if (offset + PAGE_SIZE > map.capacity()) {
-        throw new IllegalStateException("Exceeded mapped file size. Increase initial map size or switch to dynamic remap.");
+    
+    // Check for integer overflow when computing offset
+    long longOffset = (long) pageId * PAGE_SIZE;
+    if (longOffset + PAGE_SIZE > Integer.MAX_VALUE || longOffset < 0) {
+        throw new IllegalArgumentException("Max Index size reached! Total Number of pages: " + pageId);
     }
+    int offset = (int) longOffset;
+ 
     map.position(offset);
     ByteBuffer slice = map.slice();
-    slice.limit(PAGE_SIZE); // only valid because we checked above
+   try {
+        slice.limit(PAGE_SIZE);
+    } catch (IllegalArgumentException e) {
+        throw new IllegalStateException("Invalid page size or offset: " + e.getMessage());
+    }
+
+   
+    
+    // only valid because we checked above
     return slice;
 }
 

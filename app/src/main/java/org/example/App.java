@@ -40,12 +40,16 @@ public class App {
               /*   OnDiskBTree tree = new OnDiskBTree("tree.index"); */
    
 
-                 for (int i = 0; i < 5000 ; i++) {
+                  for (int i = 0; i < 5000 ; i++) {
                         byte[] key = ("AAPL" + i).getBytes("UTF-8");
                        
-                        for (int j = 1; j < 100; j++) {
+                        for (int j = 1; j < 10; j++) {
+                            try {
                                 byte[] value = intToByteArray(j);
                                 tree.insert(key, value); 
+                        }catch (IOException e) {
+                                System.err.println("Error inserting key: " + new String(key) + " - " + e.getMessage() +  " key count " + (i*j));
+                            }  
                         }
               
                 } 
@@ -56,11 +60,14 @@ public class App {
                         byte[] key = ("AAPL" + i).getBytes("UTF-8");
                        
                       
-                               Iterable<byte[]> res =  tree.search(key);
+                           long startTime = System.nanoTime();
+                           Iterable<byte[]> res =  tree.search(key);
+                           long endTime = System.nanoTime();
+                           System.out.println("Search took " + (endTime - startTime) / 1_000_000.0 + " ms");
 
                                res.forEach(value -> {
                                    int result = fromByteArray(value);
-                                   System.out.println("Found value: " + result);
+                                   //System.out.println("Found value: " + result);
                                });
                                
                        
