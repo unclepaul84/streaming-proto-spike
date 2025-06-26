@@ -8,8 +8,8 @@ import java.nio.channels.*;
 import java.nio.file.*;
 import java.util.*;
 
-public class OnDiskBPlusTree {
-    static final int PAGE_SIZE = 4096;
+public class OnDiskBPlusTree implements AutoCloseable {
+    static final int PAGE_SIZE = 1024 * 4;
     static final int MAX_KEY_SIZE = 128;
     static final int MAX_VALUE_SIZE = 8;
 
@@ -19,136 +19,217 @@ public class OnDiskBPlusTree {
 
     RandomAccessFile file;
     FileChannel channel;
-    MappedByteBuffer map;
-    int nextPageId = 1;
+    long nextPageId = 1;
 
     public OnDiskBPlusTree(String path) throws IOException {
         boolean newFile = !Files.exists(Paths.get(path));
         file = new RandomAccessFile(path, "rw");
         channel = file.getChannel();
-        map = channel.map(FileChannel.MapMode.READ_WRITE, 0, Integer.MAX_VALUE);
         if (newFile) {
-            int root = allocateLeafPage();
-            map.putInt(0, root); // root page pointer at position 0
+            long root = allocateLeafPage();
+            writeRootPageId(root);
         } else {
-            nextPageId = (int) (channel.size() / PAGE_SIZE);
+            nextPageId = channel.size() / PAGE_SIZE;
+        }
+    }
+
+    @Override
+    public void close() throws IOException {
+        if (channel != null) {
+            channel.force(true);
+            channel.close();
+        }
+        if (file != null) {
+            file.close();
         }
     }
 
     public void insert(byte[] key, byte[] value) throws IOException {
+        if (key.length > MAX_KEY_SIZE || value.length > MAX_VALUE_SIZE) {
+            throw new IllegalArgumentException("Key or value exceeds maximum size");
+        }
         InsertResult result = insertRecursive(getRootPageId(), key, value);
         if (result != null && result.newRightPage != -1) {
-            int newRoot = allocateInternalPage();
+            long newRoot = allocateInternalPage();
             ByteBuffer rootBuf = getPage(newRoot);
             rootBuf.put(0, NODE_INTERNAL);
-            rootBuf.putInt(1, 1); // entry count
-            writeInternalEntry(rootBuf, 5, result.middleKey, getRootPageId(), result.newRightPage);
-            map.putInt(0, newRoot); // update root pointer
+            rootBuf.putInt(1, 1);
+            rootBuf.position(5);
+            rootBuf.putLong(result.leftChildOfNewRoot); // leftmost child
+            writeInternalEntry(rootBuf, rootBuf.position(), result.middleKey, result.newRightPage);
+            writePage(newRoot, rootBuf);
+            writeRootPageId(newRoot);
         }
     }
 
-    private InsertResult insertRecursive(int pageId, byte[] key, byte[] value) throws IOException {
+    private InsertResult insertRecursive(long pageId, byte[] key, byte[] value) throws IOException {
         ByteBuffer buf = getPage(pageId);
         byte type = buf.get(0);
         int count = buf.getInt(1);
 
         if (type == NODE_LEAF) {
             List<LeafEntry> entries = readLeafEntries(buf);
-            for (LeafEntry e : entries) {
-                if (Arrays.equals(e.key, key)) {
-                    appendToOverflow(e.overflowPage, value);
-                    return null;
-                }
+            int idx = findKeyIndex(entries, key);
+            if (idx != -1) {
+                appendToOverflow(entries.get(idx).overflowPage, value);
+                return null;
             }
 
-            int overflow = allocateOverflow(value);
+            long overflow = allocateOverflow(value);
             entries.add(new LeafEntry(key, overflow));
             entries.sort(Comparator.comparing(e -> new ByteArrayWrapper(e.key)));
 
             if (estimateLeafSize(entries) <= PAGE_SIZE - 5) {
                 writeLeafEntries(buf, entries);
+                writePage(pageId, buf);
                 return null;
             } else {
                 int splitIndex = entries.size() / 2;
-                List<LeafEntry> left = entries.subList(0, splitIndex);
-                List<LeafEntry> right = entries.subList(splitIndex, entries.size());
+                List<LeafEntry> left = new ArrayList<>(entries.subList(0, splitIndex));
+                List<LeafEntry> right = new ArrayList<>(entries.subList(splitIndex, entries.size()));
                 writeLeafEntries(buf, left);
+                writePage(pageId, buf);
 
-                int newRightPage = allocateLeafPage();
+                long newRightPage = allocateLeafPage();
                 ByteBuffer rightBuf = getPage(newRightPage);
                 writeLeafEntries(rightBuf, right);
+                writePage(newRightPage, rightBuf);
 
-                return new InsertResult(right.get(0).key, newRightPage);
+                return new InsertResult(right.get(0).key, newRightPage, pageId);
             }
         }
 
         if (type == NODE_INTERNAL) {
-            List<InternalEntry> entries = readInternalEntries(buf);
+            long[] leftmostChild = new long[1];
+            List<InternalEntry> entries = readInternalEntries(buf, leftmostChild);
+            if (entries.isEmpty()) {
+                throw new IllegalStateException("Internal node has no children");
+            }
             int i = 0;
             for (; i < entries.size(); i++) {
-                if (Arrays.compare(key, entries.get(i).key) < 0) break;
+                if (Arrays.compare(key, entries.get(i).key) < 0)
+                    break;
             }
 
-            int childPage = (i == 0) ? entries.get(0).leftChild : entries.get(i - 1).rightChild;
+            long childPage = (i == 0) ? leftmostChild[0] : entries.get(i - 1).rightChild;
             InsertResult res = insertRecursive(childPage, key, value);
-            if (res == null || res.newRightPage == -1) return null;
+            if (res == null || res.newRightPage == -1)
+                return null;
 
-            byte[] newKey = res.middleKey;
-            int newPage = res.newRightPage;
+            // Insert new entry after split
+            InternalEntry insert = new InternalEntry(res.middleKey, res.newRightPage);
+            if (i == 0) {
+                entries.add(0, insert);
+                leftmostChild[0] = res.leftChildOfNewRoot;
+            } else {
+                entries.add(i, insert);
+            }
 
-            InternalEntry insert = new InternalEntry(newKey, childPage, newPage);
-            entries.add(insert);
-            entries.sort(Comparator.comparing(e -> new ByteArrayWrapper(e.key)));
-
-            if (estimateInternalSize(entries) <= PAGE_SIZE - 5) {
-                writeInternalEntries(buf, entries);
+            if (estimateInternalSize(entries) <= PAGE_SIZE - 5 - 8) {
+                writeInternalEntries(buf, leftmostChild[0], entries);
+                writePage(pageId, buf);
                 return null;
             } else {
                 int splitIndex = entries.size() / 2;
-                InternalEntry mid = entries.get(splitIndex);
+                byte[] promotedKey = entries.get(splitIndex).key;
+                long promotedRightChild = entries.get(splitIndex).rightChild;
 
-                List<InternalEntry> left = entries.subList(0, splitIndex);
-                List<InternalEntry> right = entries.subList(splitIndex + 1, entries.size());
+                List<InternalEntry> leftEntries = new ArrayList<>(entries.subList(0, splitIndex));
+                List<InternalEntry> rightEntries = new ArrayList<>(entries.subList(splitIndex + 1, entries.size()));
 
-                writeInternalEntries(buf, left);
-                int newRight = allocateInternalPage();
-                writeInternalEntries(getPage(newRight), right);
+                long leftLeftmost = leftmostChild[0];
+                long rightLeftmost = promotedRightChild;
 
-                return new InsertResult(mid.key, newRight);
+                writeInternalEntries(buf, leftLeftmost, leftEntries);
+                writePage(pageId, buf);
+
+                long newRight = allocateInternalPage();
+                ByteBuffer rightBuf = getPage(newRight);
+                writeInternalEntries(rightBuf, rightLeftmost, rightEntries);
+                writePage(newRight, rightBuf);
+
+                return new InsertResult(promotedKey, newRight, pageId);
             }
         }
 
         throw new IllegalStateException("Unknown page type");
     }
 
+    private int findKeyIndex(List<LeafEntry> entries, byte[] key) {
+        int left = 0, right = entries.size() - 1;
+        while (left <= right) {
+            int mid = (left + right) >>> 1;
+            int cmp = Arrays.compare(entries.get(mid).key, key);
+            if (cmp == 0)
+                return mid;
+            if (cmp < 0)
+                left = mid + 1;
+            else
+                right = mid - 1;
+        }
+        return -1;
+    }
+
     public Iterable<byte[]> search(byte[] key) {
+        if (key.length > MAX_KEY_SIZE) {
+            throw new IllegalArgumentException("Key exceeds maximum size");
+        }
         return () -> new Iterator<byte[]>() {
-            int overflowPage = findOverflow(getRootPageId(), key);
+            long overflowPage = findOverflow(getRootPageId(), key);
             ByteBuffer buf = (overflowPage != -1) ? getPage(overflowPage) : null;
+            int valueIndex = 0;
+            int valueCount = 0;
+            int[] valueOffsets = null;
             boolean valid = overflowPage != -1;
+
+            private void loadOffsets() {
+                if (buf == null)
+                    return;
+                valueCount = buf.getInt(1);
+                valueOffsets = new int[valueCount];
+                int pos = 5;
+                for (int i = 0; i < valueCount; i++) {
+                    valueOffsets[i] = pos;
+                    buf.position(pos);
+                    int len = buf.getInt();
+                    pos = buf.position() + len;
+                }
+            }
+
+            {
+                if (valid)
+                    loadOffsets();
+            }
 
             @Override
             public boolean hasNext() {
-                return valid;
+                while (valid) {
+                    if (valueIndex < valueCount) {
+                        return true;
+                    }
+                    // Move to next overflow page if available
+                    long next = buf.getLong(PAGE_SIZE - 8);
+                    if (next == -1) {
+                        valid = false;
+                        return false;
+                    }
+                    buf = getPage(next);
+                    valueIndex = 0;
+                    loadOffsets();
+                }
+                return false;
             }
 
-  @Override
-    public byte[] next() {
-        if (!valid) throw new NoSuchElementException();
-
-        buf.position(5); // ✅ Fix: ensure correct buffer position for each page
-        int len = buf.getInt();
-        byte[] val = new byte[len];
-        buf.get(val);
-        int next = buf.getInt(PAGE_SIZE - 4);
-        if (next == -1) {
-            valid = false;
-        } else {
-            buf = getPage(next);
-            // don't need buf.position(5) here again because next() restarts at top
-        }
-        return val;
-    }
+            @Override
+            public byte[] next() {
+                if (!hasNext()) throw new NoSuchElementException();
+                buf.position(valueOffsets[valueIndex]);
+                int len = buf.getInt();
+                byte[] val = new byte[len];
+                buf.get(val);
+                valueIndex++;
+                return val;
+            }
 
             @Override
             public void remove() {
@@ -157,24 +238,30 @@ public class OnDiskBPlusTree {
         };
     }
 
-    private int findOverflow(int pageId, byte[] key) {
+    private long findOverflow(long pageId, byte[] key) {
         ByteBuffer buf = getPage(pageId);
         byte type = buf.get(0);
 
         if (type == NODE_LEAF) {
             List<LeafEntry> entries = readLeafEntries(buf);
-            for (LeafEntry e : entries) {
-                if (Arrays.equals(e.key, key)) return e.overflowPage;
-            }
+            int idx = findKeyIndex(entries, key);
+            if (idx != -1)
+                return entries.get(idx).overflowPage;
             return -1;
         }
 
         if (type == NODE_INTERNAL) {
-            List<InternalEntry> entries = readInternalEntries(buf);
-            for (InternalEntry e : entries) {
-                if (Arrays.compare(key, e.key) < 0) return findOverflow(e.leftChild, key);
+            long[] leftmostChild = new long[1];
+            List<InternalEntry> entries = readInternalEntries(buf, leftmostChild);
+            if (entries.isEmpty()) {
+                throw new IllegalStateException("Internal node has no children");
             }
-            return findOverflow(entries.get(entries.size() - 1).rightChild, key);
+            for (InternalEntry e : entries) {
+                if (Arrays.compare(key, e.key) < 0)
+                    return findOverflow(leftmostChild[0], key);
+                leftmostChild[0] = e.rightChild;
+            }
+            return findOverflow(leftmostChild[0], key);
         }
 
         throw new IllegalStateException("Unknown page type");
@@ -184,8 +271,9 @@ public class OnDiskBPlusTree {
 
     static class LeafEntry {
         byte[] key;
-        int overflowPage;
-        LeafEntry(byte[] key, int overflowPage) {
+        long overflowPage;
+
+        LeafEntry(byte[] key, long overflowPage) {
             this.key = key;
             this.overflowPage = overflowPage;
         }
@@ -193,90 +281,152 @@ public class OnDiskBPlusTree {
 
     static class InternalEntry {
         byte[] key;
-        int leftChild, rightChild;
-        InternalEntry(byte[] key, int leftChild, int rightChild) {
+        long rightChild;
+
+        InternalEntry(byte[] key, long rightChild) {
             this.key = key;
-            this.leftChild = leftChild;
             this.rightChild = rightChild;
         }
     }
 
     static class InsertResult {
         byte[] middleKey;
-        int newRightPage;
-        InsertResult(byte[] key, int page) {
+        long newRightPage;
+        long leftChildOfNewRoot;
+
+        InsertResult(byte[] key, long page, long leftChild) {
             this.middleKey = key;
             this.newRightPage = page;
+            this.leftChildOfNewRoot = leftChild;
         }
     }
 
     static class ByteArrayWrapper implements Comparable<ByteArrayWrapper> {
         byte[] data;
-        ByteArrayWrapper(byte[] d) { data = d; }
-        public int compareTo(ByteArrayWrapper o) { return Arrays.compare(data, o.data); }
+
+        ByteArrayWrapper(byte[] d) {
+            data = d;
+        }
+
+        public int compareTo(ByteArrayWrapper o) {
+            return Arrays.compare(data, o.data);
+        }
     }
 
     // --- Page Access + Serialization
-private ByteBuffer getPage(int pageId) {
-    
-    // Check for integer overflow when computing offset
-    long longOffset = (long) pageId * PAGE_SIZE;
-    if (longOffset + PAGE_SIZE > Integer.MAX_VALUE || longOffset < 0) {
-        throw new IllegalArgumentException("Max Index size reached! Total Number of pages: " + pageId);
-    }
-    int offset = (int) longOffset;
- 
-    map.position(offset);
-    ByteBuffer slice = map.slice();
-   try {
-        slice.limit(PAGE_SIZE);
-    } catch (IllegalArgumentException e) {
-        throw new IllegalStateException("Invalid page size or offset: " + e.getMessage());
+
+    private ByteBuffer getPage(long pageId) {
+        long offset = pageId * PAGE_SIZE;
+        ByteBuffer buf = ByteBuffer.allocate(PAGE_SIZE);
+        try {
+            channel.read(buf, offset);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        buf.flip();
+        return buf;
     }
 
-   
-    
-    // only valid because we checked above
-    return slice;
-}
+    private void writePage(long pageId, ByteBuffer buf) {
+        long offset = pageId * PAGE_SIZE;
+        buf.position(0);
+        buf.limit(PAGE_SIZE);
+        try {
+            channel.write(buf, offset);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-    private int getRootPageId() { return map.getInt(0); }
+    private long getRootPageId() {
+        ByteBuffer buf = ByteBuffer.allocate(8);
+        try {
+            channel.read(buf, 0);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        buf.flip();
+        return buf.getLong();
+    }
 
-    private int allocateLeafPage() {
-        int id = nextPageId++;
-        ByteBuffer buf = getPage(id);
+    private void writeRootPageId(long pageId) {
+        ByteBuffer buf = ByteBuffer.allocate(8);
+        buf.putLong(pageId);
+        buf.flip();
+        try {
+            channel.write(buf, 0);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private long allocateLeafPage() {
+        long id = nextPageId++;
+        ByteBuffer buf = ByteBuffer.allocate(PAGE_SIZE);
         buf.put(0, NODE_LEAF);
         buf.putInt(1, 0);
+        writePage(id, buf);
         return id;
     }
 
-    private int allocateInternalPage() {
-        int id = nextPageId++;
-        ByteBuffer buf = getPage(id);
+    private long allocateInternalPage() {
+        long id = nextPageId++;
+        ByteBuffer buf = ByteBuffer.allocate(PAGE_SIZE);
         buf.put(0, NODE_INTERNAL);
         buf.putInt(1, 0);
+        writePage(id, buf);
         return id;
     }
 
-    private int allocateOverflow(byte[] value) {
-        int pageId = nextPageId++;
-        ByteBuffer buf = getPage(pageId);
+    private long allocateOverflow(byte[] value) {
+        long pageId = nextPageId++;
+        ByteBuffer buf = ByteBuffer.allocate(PAGE_SIZE);
         buf.put(0, NODE_OVERFLOW);
-        buf.putInt(1, 0);
+        buf.putInt(1, 1); // value count
         buf.position(5);
         buf.putInt(value.length);
         buf.put(value);
-        buf.putInt(PAGE_SIZE - 4, -1);
+        buf.position(PAGE_SIZE - 8);
+        buf.putLong(-1L);
+        writePage(pageId, buf);
         return pageId;
     }
 
-    private void appendToOverflow(int pageId, byte[] value) {
+    // Always write value to a new overflow page if full, and chain correctly
+    private void appendToOverflow(long pageId, byte[] value) {
         while (true) {
             ByteBuffer buf = getPage(pageId);
-            int next = buf.getInt(PAGE_SIZE - 4);
+            int count = buf.getInt(1);
+            int pos = 5;
+            for (int i = 0; i < count; i++) {
+                buf.position(pos);
+                int len = buf.getInt();
+                pos = buf.position() + len;
+            }
+            int spaceNeeded = 4 + value.length;
+            if (pos + spaceNeeded + 8 <= PAGE_SIZE) { // 8 bytes for next pointer
+                buf.position(pos);
+                buf.putInt(value.length);
+                buf.put(value);
+                buf.putInt(1, count + 1);
+                writePage(pageId, buf);
+                break;
+            }
+            long next = buf.getLong(PAGE_SIZE - 8);
             if (next == -1) {
-                int newPage = allocateOverflow(value);
-                buf.putInt(PAGE_SIZE - 4, newPage);
+                long newPage = nextPageId++;
+                ByteBuffer newBuf = ByteBuffer.allocate(PAGE_SIZE);
+                newBuf.put(0, NODE_OVERFLOW);
+                newBuf.putInt(1, 1); // value count
+                newBuf.position(5);
+                newBuf.putInt(value.length);
+                newBuf.put(value);
+                newBuf.position(PAGE_SIZE - 8);
+                newBuf.putLong(-1L);
+                writePage(newPage, newBuf);
+                buf.position(PAGE_SIZE - 8);
+                buf.putLong(newPage);
+                writePage(pageId, buf);
                 break;
             }
             pageId = next;
@@ -292,7 +442,7 @@ private ByteBuffer getPage(int pageId) {
             int klen = buf.getInt();
             byte[] key = new byte[klen];
             buf.get(key);
-            int overflow = buf.getInt();
+            long overflow = buf.getLong();
             entries.add(new LeafEntry(key, overflow));
             pos = buf.position();
         }
@@ -307,53 +457,54 @@ private ByteBuffer getPage(int pageId) {
         for (LeafEntry e : entries) {
             buf.putInt(e.key.length);
             buf.put(e.key);
-            buf.putInt(e.overflowPage);
+            buf.putLong(e.overflowPage);
         }
     }
 
-    private List<InternalEntry> readInternalEntries(ByteBuffer buf) {
+    private List<InternalEntry> readInternalEntries(ByteBuffer buf, long[] leftmostChild) {
         int count = buf.getInt(1);
-        List<InternalEntry> entries = new ArrayList<>();
         int pos = 5;
+        leftmostChild[0] = buf.getLong(pos);
+        pos += 8;
+        List<InternalEntry> entries = new ArrayList<>();
         for (int i = 0; i < count; i++) {
             buf.position(pos);
             int klen = buf.getInt();
             byte[] key = new byte[klen];
             buf.get(key);
-            int left = buf.getInt();
-            int right = buf.getInt();
-            entries.add(new InternalEntry(key, left, right));
+            long right = buf.getLong();
+            entries.add(new InternalEntry(key, right));
             pos = buf.position();
         }
         return entries;
     }
 
-    private void writeInternalEntries(ByteBuffer buf, List<InternalEntry> entries) {
+    private void writeInternalEntries(ByteBuffer buf, long leftmostChild, List<InternalEntry> entries) {
         buf.clear();
         buf.put(0, NODE_INTERNAL);
         buf.putInt(1, entries.size());
         buf.position(5);
+        buf.putLong(leftmostChild);
         for (InternalEntry e : entries) {
             buf.putInt(e.key.length);
             buf.put(e.key);
-            buf.putInt(e.leftChild);
-            buf.putInt(e.rightChild);
+            buf.putLong(e.rightChild);
         }
     }
 
-    private void writeInternalEntry(ByteBuffer buf, int pos, byte[] key, int left, int right) {
+    private void writeInternalEntry(ByteBuffer buf, int pos, byte[] key, long right) {
         buf.position(pos);
         buf.putInt(key.length);
         buf.put(key);
-        buf.putInt(left);
-        buf.putInt(right);
+        buf.putLong(right);
     }
 
     private int estimateLeafSize(List<LeafEntry> entries) {
-        return 5 + entries.stream().mapToInt(e -> 4 + e.key.length + 4).sum();
+        return 5 + entries.stream().mapToInt(e -> 4 + e.key.length + 8).sum();
     }
 
     private int estimateInternalSize(List<InternalEntry> entries) {
-        return 5 + entries.stream().mapToInt(e -> 4 + e.key.length + 4 + 4).sum();
+        // 5 bytes header + 8 bytes leftmostChild + per-entry
+        return 5 + 8 + entries.stream().mapToInt(e -> 4 + e.key.length + 8).sum();
     }
 }

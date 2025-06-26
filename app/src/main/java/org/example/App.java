@@ -19,59 +19,53 @@ public class App {
 
         public static void main(String[] args) throws Exception {
         
-                  OnDiskBPlusTree tree = new OnDiskBPlusTree("btree.data");
+                try ( OnDiskBPlusTree tree = new OnDiskBPlusTree("btree.data"))
+                {
 
-  /*   tree.insert("apple".getBytes(), "red".getBytes());
-    tree.insert("apple".getBytes(), "green".getBytes());
-    tree.insert("banana".getBytes(), "yellow".getBytes());
-
-    for (byte[] val : tree.search("apple".getBytes())) {
-        System.out.println("apple -> " + new String(val));
-    }
-
-    for (byte[] val : tree.search("banana".getBytes())) {
-        System.out.println("banana -> " + new String(val));
-    }*/
-
-
-
-
-
-              /*   OnDiskBTree tree = new OnDiskBTree("tree.index"); */
-   
-
+  
                   for (int i = 0; i < 5000 ; i++) {
                         byte[] key = ("AAPL" + i).getBytes("UTF-8");
                        
-                        for (int j = 1; j < 10; j++) {
+                        for (int j = 0; j < 10000; j++) {
                             try {
                                 byte[] value = intToByteArray(j);
                                 tree.insert(key, value); 
                         }catch (IOException e) {
-                                System.err.println("Error inserting key: " + new String(key) + " - " + e.getMessage() +  " key count " + (i*j));
+                                System.out.println("Error inserting key: " + new String(key) + " - " + e.getMessage() +  " key count " + (i*j));
                             }  
                         }
               
                 } 
+            
 
-
-                  for (int i = 0; i < 10 ; i++) {
+                //OnDiskBPlusTree tree_read = new OnDiskBPlusTree("btree.data");
+              
+                  for (int i = 0; i < 5000 ; i++) {
                         
                         byte[] key = ("AAPL" + i).getBytes("UTF-8");
                        
                       
-                           long startTime = System.nanoTime();
+                           //long startTime = System.nanoTime();
                            Iterable<byte[]> res =  tree.search(key);
-                           long endTime = System.nanoTime();
-                           System.out.println("Search took " + (endTime - startTime) / 1_000_000.0 + " ms");
+                        //   long endTime = System.nanoTime();
+                           //System.out.println("Search took " + (endTime - startTime) / 1_000_000.0 + " ms");
+                              java.util.concurrent.atomic.AtomicLong sum = new java.util.concurrent.atomic.AtomicLong(0);
 
-                               res.forEach(value -> {
+                               res.forEach( value -> {
                                    int result = fromByteArray(value);
-                                   //System.out.println("Found value: " + result);
+                                   sum.incrementAndGet();
+                                   
                                });
+
+                               if(sum.get() != 1000) {
+                                   System.out.println("Incorrect values found for key: " + new String(key) + " - Expected 1000, found " + sum.get());
+                               }
                                
                        
                 } 
+                }
+
+               // System.out.println("Sum of all values: " + sum.get());
 
         //byte[] key = "AAPL".getBytes("UTF-8");
        
