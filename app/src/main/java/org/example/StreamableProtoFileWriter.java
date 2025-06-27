@@ -5,7 +5,6 @@ import java.io.DataOutputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.function.Function;
 import java.util.function.BiConsumer;
 
 public class StreamableProtoFileWriter<H extends com.google.protobuf.GeneratedMessageV3, P extends com.google.protobuf.GeneratedMessageV3>
@@ -15,7 +14,7 @@ public class StreamableProtoFileWriter<H extends com.google.protobuf.GeneratedMe
     private boolean sealed = false;
     private BiConsumer<Long, P> onWriteCallback;
     private long currentWriteOffset = 0;
-
+    
     public  StreamableProtoFileWriter(String file, H header, BiConsumer<Long, P> onWriteCallback)
             throws FileNotFoundException, IOException, IllegalArgumentException {      
                 this(file, header);
@@ -38,7 +37,7 @@ public class StreamableProtoFileWriter<H extends com.google.protobuf.GeneratedMe
 
         this.fi.writeInt(StreamableProtoFileParser.MAGIC_BYTE);
         this.currentWriteOffset += 4;
-
+        
         byte[] headerBytes = header.toByteArray();
         
         this.fi.writeInt(headerBytes.length);
@@ -66,7 +65,6 @@ public class StreamableProtoFileWriter<H extends com.google.protobuf.GeneratedMe
 
         return payloadBytes.length;
     }
-
     // Seal the file
     public void Seal() throws IOException {
         if (!sealed) {
