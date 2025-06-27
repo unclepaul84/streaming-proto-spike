@@ -22,8 +22,8 @@ public class App {
 
     public static void main(String[] args) throws Exception {
 
-        //TestStreamedProtoWithIndex();
-        TestStreamedProtoTarGz();
+        TestStreamedProtoWithIndex();
+        //TestStreamedProtoTarGz();
        // TestStreamedProto();
 
     }
@@ -59,12 +59,11 @@ public class App {
         String baseFolder = "tar/";
 
         String write_File = baseFolder + "data.binpb";
-        String read_File = baseFolder + "data.binpb";
+        
         String index_File = baseFolder + "name.index";
       
-
-
         java.io.File indexFile = new java.io.File(index_File);
+        
         OnDiskBPlusTree index = new OnDiskBPlusTree(index_File);
         
         if (indexFile.exists()) {
@@ -136,65 +135,7 @@ public class App {
         writer.close();
       
         createTarGz(Paths.get(baseFolder), Paths.get("prices.binpb.tar.gz"));
-        /*
-        StreamableProtoFileParser<PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader, PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload> parser = null;
-        try {
-            parser = new StreamableProtoFileParser<PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader, PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload>(
-                    read_File, t -> {
-                        try {
-                            return PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader
-                                    .parseFrom(t);
-                        } catch (InvalidProtocolBufferException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-                            throw new RuntimeException(e);
-                        }
-
-                    }, h -> {
-                        try {
-                            return PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload
-                                    .parseFrom(h);
-                        } catch (InvalidProtocolBufferException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-                            throw new RuntimeException(e);
-                        }
-                    });
-            var accessor = parser.GetPayloadRandomAccesor();
-
-            PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader parsedHeader = accessor
-                    .GetHeader();
-                    long timerStart = System.currentTimeMillis();
-
-                    for (int i = 500000; i < 500010; i++) {
-
-                        index.search(("AAPL" + i).getBytes()).forEach(value -> {
-                            try {
-                                long offset = bytesToLongBigE(value);
-                                PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload payload = accessor
-                                        .GetPayloadAtOffset(offset);
-                                System.out.println("Found " + payload.getPrice().getName());
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        });
-
-                    }
-
-              
-                    System.out.println("Elapsed time for indexed search: " + (System.currentTimeMillis() - timerStart) + " ms");
-
-
-                    var   enumerator = parser.GetPayloadEnumerator();
-                    timerStart = System.currentTimeMillis();
-                    while(enumerator.GetNextPayload() != null) {
-                        // Just iterate through the file to ensure it works
-                    }
-                    System.out.println("Elapsed time for full scan: " + (System.currentTimeMillis() - timerStart) + " ms");
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }*/
+   
     }
 
     public static void TestStreamedProtoWithIndex() throws Exception {
@@ -305,14 +246,17 @@ public class App {
                     .GetHeader();
                     long timerStart = System.currentTimeMillis();
 
-                    for (int i = 500000; i < 500010; i++) {
-
-                        index.search(("AAPL" + i).getBytes()).forEach(value -> {
+                    for (int i = 0; i < 1500000; i++) {
+                        String name = "AAPL" + i;
+                        index.search(name.getBytes()).forEach(value -> {
                             try {
                                 long offset = bytesToLongBigE(value);
                                 PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload payload = accessor
                                         .GetPayloadAtOffset(offset);
-                                System.out.println("Found " + payload.getPrice().getName());
+                               if(!name.equals(payload.getPrice().getName()))
+                                {
+                                    throw new RuntimeException("Name mismatch: " + name + " != " + payload.getPrice().getName());
+                                }
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
