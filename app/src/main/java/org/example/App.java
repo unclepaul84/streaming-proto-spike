@@ -28,31 +28,7 @@ public class App {
 
     }
 
-    public static void createTarGz(Path sourceDir, Path tarGzPath) throws IOException {
-        try (
-            OutputStream fos = Files.newOutputStream(tarGzPath);
-            BufferedOutputStream bos = new BufferedOutputStream(fos);
-            GzipCompressorOutputStream gzos = new GzipCompressorOutputStream(bos);
-            TarArchiveOutputStream taos = new TarArchiveOutputStream(gzos)
-        ) {
-            taos.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
-            Files.walk(sourceDir).forEach(path -> {
-                if (Files.isDirectory(path)) return;
-
-                Path relativePath = sourceDir.relativize(path);
-                TarArchiveEntry entry = new TarArchiveEntry(path.toFile(), relativePath.toString());
-
-                try (InputStream is = Files.newInputStream(path)) {
-                    taos.putArchiveEntry(entry);
-                    is.transferTo(taos);
-                    taos.closeArchiveEntry();
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            });
-            taos.finish();
-        }
-    }
+    
 
     public static void TestStreamedProtoTarGz() throws Exception 
     {
@@ -411,4 +387,29 @@ public class App {
         return value;
     }
 
+    public static void createTarGz(Path sourceDir, Path tarGzPath) throws IOException {
+        try (
+            OutputStream fos = Files.newOutputStream(tarGzPath);
+            BufferedOutputStream bos = new BufferedOutputStream(fos);
+            GzipCompressorOutputStream gzos = new GzipCompressorOutputStream(bos);
+            TarArchiveOutputStream taos = new TarArchiveOutputStream(gzos)
+        ) {
+            taos.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
+            Files.walk(sourceDir).forEach(path -> {
+                if (Files.isDirectory(path)) return;
+
+                Path relativePath = sourceDir.relativize(path);
+                TarArchiveEntry entry = new TarArchiveEntry(path.toFile(), relativePath.toString());
+
+                try (InputStream is = Files.newInputStream(path)) {
+                    taos.putArchiveEntry(entry);
+                    is.transferTo(taos);
+                    taos.closeArchiveEntry();
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+            taos.finish();
+        }
+    }
 }
