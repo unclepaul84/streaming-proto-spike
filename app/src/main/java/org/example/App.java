@@ -55,7 +55,7 @@ public class App {
                 .setSource("Java App")
                 .build();
 
-        var writer = new PricesStreamedFileWriter(
+        var writer = new PricesStreamableFileWriter(
                 write_File, header, (offset, payload) -> {
 
                     try {
@@ -267,7 +267,7 @@ public class App {
                 .setSource("Java App")
                 .build();
 
-        var writer = new PricesStreamedFileWriter(
+        var writer = new PricesStreamableFileWriter(
                 write_File, header);
 
         List<Double> prices = new ArrayList<Double>();
