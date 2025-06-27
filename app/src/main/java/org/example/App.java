@@ -17,266 +17,279 @@ import java.util.List;
 
 public class App {
 
-        public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws Exception {
 
-                TestStreamedProtoWithIndex();
+        TestStreamedProtoWithIndex();
 
+    }
+
+    public static void TestStreamedProtoWithIndex() throws Exception {
+
+        String baseFolder = "";
+
+        String write_File = baseFolder + "price_entities_java_indexed.binpb";
+        String read_File = baseFolder + "price_entities_java_indexed.binpb";
+        String index_File = baseFolder +"name.index";
+
+        java.io.File indexFile = new java.io.File(index_File);
+        OnDiskBPlusTree index = new OnDiskBPlusTree(index_File);
+       /*  if (indexFile.exists()) {
+            if (!indexFile.delete()) {
+                System.err.println("Failed to delete existing index file: " + index_File);
+            }
         }
 
-        public static void TestStreamedProtoWithIndex() throws Exception {
-                String write_File = "price_entities_java_indexed.binpb";
-                String read_File = "price_entities_java_indexed.binpb";
-                String index_File = "name.index";
-                java.io.File indexFile = new java.io.File(index_File);
+       
 
-                if (indexFile.exists()) {
-                                if (!indexFile.delete()) {
-                                                System.err.println("Failed to delete existing index file: " + index_File);
-                                }
-                }
+        PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader header = PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader
+                .newBuilder()
+                .setSource("Java App")
+                .build();
 
-                OnDiskBPlusTree index = new OnDiskBPlusTree("name.index");
+        var writer = new PricesStreamedFileWriter(
+                write_File, header, (offset, payload) -> {
 
-                PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader header = PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader
-                                .newBuilder()
-                                .setSource("Java App")
-                                .build();
-
-                var writer = new PricesStreamedFileWriter(
-                                write_File, header, (offset, payload) -> {
-
-                                        try {
-                                                String name = payload.getPrice().getName();
-                                                if (name != null && !name.isEmpty()) {
-                                                        index.insert(name.getBytes("UTF-8"), longToBytes(offset));
-                                                }
-                                        } catch (Exception e) {
-                                                e.printStackTrace();
-                                        }
-
-                                });
-
-                List<Double> prices = new ArrayList<Double>();
-                for (int i = 0; i < 10000; i++) {
-                        prices.add(100.0 + i);
-                }
-
-                long totalBytesWritten = 0;
-                var startTime = System.currentTimeMillis();
-
-                for (int i = 0; i < 150000; i++) {
-
-                        var priceEntity = PriceEntityOuterClass.PriceEntity.newBuilder()
-                                        .addAllPrices(prices)
-                                        .setCurrency("USD")
-                                        .setName("AAPL" + i)
-                                        .build();
-
-                        PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload payload = PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload
-                                        .newBuilder()
-                                        .setPrice(priceEntity)
-                                        .build();
-                        var bytesWritten = writer.Write(payload);
-
-                        if (i % 10000 == 0) {
-
-                                long elapsedTime = System.currentTimeMillis() - startTime;
-                                double averageBytesPerSecond = (double) totalBytesWritten / (elapsedTime /
-                                                1000.0) / (1024.0 * 1024.0);
-                                System.out.println("Average MB written per second: " + String.format("%.1f",
-                                                averageBytesPerSecond));
-
+                    try {
+                        String name = payload.getPrice().getName();
+                        if (name != null && !name.isEmpty()) {
+                            index.insert(name.getBytes("UTF-8"), longToBytes(offset));
                         }
-
-                        if (i % 100000 == 0) {
-                                System.out.println("Written " + i + " records");
-                        }
-
-                        totalBytesWritten += bytesWritten;
-                }
-
-                writer.close();
-
-                StreamableProtoFileParser<PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader, PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload> parser = null;
-                try {
-                        parser = new StreamableProtoFileParser<PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader, PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload>(
-                                        read_File, t -> {
-                                                try {
-                                                        return PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader
-                                                                        .parseFrom(t);
-                                                } catch (InvalidProtocolBufferException e) {
-                                                        // TODO Auto-generated catch block
-                                                        e.printStackTrace();
-                                                        throw new RuntimeException(e);
-                                                }
-
-                                        }, h -> {
-                                                try {
-                                                        return PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload
-                                                                        .parseFrom(h);
-                                                } catch (InvalidProtocolBufferException e) {
-                                                        // TODO Auto-generated catch block
-                                                        e.printStackTrace();
-                                                        throw new RuntimeException(e);
-                                                }
-                                        });
-                        var enumerator = parser.GetPayloadEnumerator();
-
-                        PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader parsedHeader = enumerator
-                                        .GetHeader();
-
-                                       
-                                        for (int i = 1000; i < 10000; i++) {
-
-                                        index.search(("AAPL" + i).getBytes()).forEach(value -> {
-                                                try {
-                                                        long offset = bytesToLong(value);
-                                                        PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload payload = enumerator
-                                                                        .GetPayloadAtOffset(offset);
-                                                        System.out.println("Found " + payload.getPrice().getName());
-                                                } catch (Exception e) {
-                                                        e.printStackTrace();
-                                                }
-                                        });
-
-
-                                }
-
-
-                } catch (Exception e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
-                }
+                    }
 
+                });
+
+        List<Double> prices = new ArrayList<Double>();
+        for (int i = 0; i < 10000; i++) {
+            prices.add(100.0 + i);
         }
 
-        public static void TestStreamedProto() throws Exception {
+        long totalBytesWritten = 0;
+        var startTime = System.currentTimeMillis();
 
-                String write_File = "price_entities_java.binpb";
-                String read_File = "price_entities_java.binpb";
+        for (int i = 0; i < 1500000; i++) {
 
-                PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader header = PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader
-                                .newBuilder()
-                                .setSource("Java App")
-                                .build();
+            var priceEntity = PriceEntityOuterClass.PriceEntity.newBuilder()
+                    .addAllPrices(prices)
+                    .setCurrency("USD")
+                    .setName("AAPL" + i)
+                    .build();
 
-                var writer = new PricesStreamedFileWriter(
-                                write_File, header);
+            PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload payload = PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload
+                    .newBuilder()
+                    .setPrice(priceEntity)
+                    .build();
+            var bytesWritten = writer.Write(payload);
 
-                List<Double> prices = new ArrayList<Double>();
-                for (int i = 0; i < 10000; i++) {
-                        prices.add(100.0 + i);
-                }
+            if (i % 10000 == 0) {
 
-                long totalBytesWritten = 0;
-                var startTime = System.currentTimeMillis();
+                long elapsedTime = System.currentTimeMillis() - startTime;
+                double averageBytesPerSecond = (double) totalBytesWritten / (elapsedTime /
+                        1000.0) / (1024.0 * 1024.0);
+                System.out.println("Average MB written per second: " + String.format("%.1f",
+                        averageBytesPerSecond));
 
-                for (int i = 0; i < 30000; i++) {
+            }
 
-                        var priceEntity = PriceEntityOuterClass.PriceEntity.newBuilder()
-                                        .addAllPrices(prices)
-                                        .setCurrency("USD")
-                                        .build();
+            if (i % 100000 == 0) {
+                System.out.println("Written " + i + " records");
+            }
 
-                        PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload payload = PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload
-                                        .newBuilder()
-                                        .setPrice(priceEntity)
-                                        .build();
-                        var bytesWritten = writer.Write(payload);
+            totalBytesWritten += bytesWritten;
+        }
 
-                        if (i % 10000 == 0) {
-
-                                long elapsedTime = System.currentTimeMillis() - startTime;
-                                double averageBytesPerSecond = (double) totalBytesWritten / (elapsedTime /
-                                                1000.0) / (1024.0 * 1024.0);
-                                System.out.println("Average MB written per second: " + String.format("%.1f",
-                                                averageBytesPerSecond));
-
+        writer.close();
+*/
+        StreamableProtoFileParser<PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader, PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload> parser = null;
+        try {
+            parser = new StreamableProtoFileParser<PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader, PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload>(
+                    read_File, t -> {
+                        try {
+                            return PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader
+                                    .parseFrom(t);
+                        } catch (InvalidProtocolBufferException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                            throw new RuntimeException(e);
                         }
 
-                        if (i % 100000 == 0) {
-                                System.out.println("Written " + i + " records");
+                    }, h -> {
+                        try {
+                            return PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload
+                                    .parseFrom(h);
+                        } catch (InvalidProtocolBufferException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                            throw new RuntimeException(e);
+                        }
+                    });
+            var accessor = parser.GetPayloadRandomAccesor();
+
+            PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader parsedHeader = accessor
+                    .GetHeader();
+                    long timerStart = System.currentTimeMillis();
+
+                    for (int i = 500000; i < 500010; i++) {
+
+                        index.search(("AAPL" + i).getBytes()).forEach(value -> {
+                            try {
+                                long offset = bytesToLong(value);
+                                PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload payload = accessor
+                                        .GetPayloadAtOffset(offset);
+                                System.out.println("Found " + payload.getPrice().getName());
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        });
+
+                    }
+
+              
+                    System.out.println("Elapsed time for indexed search: " + (System.currentTimeMillis() - timerStart) + " ms");
+
+
+                    var   enumerator = parser.GetPayloadEnumerator();
+                    timerStart = System.currentTimeMillis();
+                    while(enumerator.GetNextPayload() != null) {
+                        // Just iterate through the file to ensure it works
+                    }
+                    System.out.println("Elapsed time for full scan: " + (System.currentTimeMillis() - timerStart) + " ms");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    public static void TestStreamedProto() throws Exception {
+
+        String write_File = "price_entities_java.binpb";
+        String read_File = "price_entities_java.binpb";
+
+        PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader header = PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader
+                .newBuilder()
+                .setSource("Java App")
+                .build();
+
+        var writer = new PricesStreamedFileWriter(
+                write_File, header);
+
+        List<Double> prices = new ArrayList<Double>();
+        for (int i = 0; i < 10000; i++) {
+            prices.add(100.0 + i);
+        }
+
+        long totalBytesWritten = 0;
+        var startTime = System.currentTimeMillis();
+
+        for (int i = 0; i < 30000; i++) {
+
+            var priceEntity = PriceEntityOuterClass.PriceEntity.newBuilder()
+                    .addAllPrices(prices)
+                    .setCurrency("USD")
+                    .build();
+
+            PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload payload = PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload
+                    .newBuilder()
+                    .setPrice(priceEntity)
+                    .build();
+            var bytesWritten = writer.Write(payload);
+
+            if (i % 10000 == 0) {
+
+                long elapsedTime = System.currentTimeMillis() - startTime;
+                double averageBytesPerSecond = (double) totalBytesWritten / (elapsedTime /
+                        1000.0) / (1024.0 * 1024.0);
+                System.out.println("Average MB written per second: " + String.format("%.1f",
+                        averageBytesPerSecond));
+
+            }
+
+            if (i % 100000 == 0) {
+                System.out.println("Written " + i + " records");
+            }
+
+            totalBytesWritten += bytesWritten;
+        }
+
+        writer.close();
+
+        // Convert priceEntity to JSON using Google Protobuf library
+        // String json = JsonFormat.printer().print(priceEntities.get(0));
+
+        int recordCount = 0;
+
+        // Read price entities from the file
+        StreamableProtoFileParser<PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader, PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload> parser = null;
+        try {
+            parser = new StreamableProtoFileParser<PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader, PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload>(
+                    read_File, t -> {
+                        try {
+                            return PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader
+                                    .parseFrom(t);
+                        } catch (InvalidProtocolBufferException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                            throw new RuntimeException(e);
                         }
 
-                        totalBytesWritten += bytesWritten;
-                }
-
-                writer.close();
-
-                // Convert priceEntity to JSON using Google Protobuf library
-                // String json = JsonFormat.printer().print(priceEntities.get(0));
-
-                int recordCount = 0;
-
-                // Read price entities from the file
-                StreamableProtoFileParser<PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader, PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload> parser = null;
-                try {
-                        parser = new StreamableProtoFileParser<PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader, PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload>(
-                                        read_File, t -> {
-                                                try {
-                                                        return PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader
-                                                                        .parseFrom(t);
-                                                } catch (InvalidProtocolBufferException e) {
-                                                        // TODO Auto-generated catch block
-                                                        e.printStackTrace();
-                                                        throw new RuntimeException(e);
-                                                }
-
-                                        }, h -> {
-                                                try {
-                                                        return PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload
-                                                                        .parseFrom(h);
-                                                } catch (InvalidProtocolBufferException e) {
-                                                        // TODO Auto-generated catch block
-                                                        e.printStackTrace();
-                                                        throw new RuntimeException(e);
-                                                }
-                                        });
-                        var enumerator = parser.GetPayloadEnumerator();
-                        PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader parsedHeader = enumerator
-                                        .GetHeader();
-                        System.out.println(JsonFormat.printer().print(parsedHeader));
-                        while (true) {
-                                PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload payload = enumerator
-                                                .GetNextPayload();
-
-                                recordCount++;
-
-                                if (recordCount % 100000 == 0) {
-                                        System.out.println("Read " + recordCount + " records");
-                                }
-
-                                if (payload == null)
-                                        break;
-
-                                // System.out.println(JsonFormat.printer().print(payload));
+                    }, h -> {
+                        try {
+                            return PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload
+                                    .parseFrom(h);
+                        } catch (InvalidProtocolBufferException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                            throw new RuntimeException(e);
                         }
+                    });
+            var enumerator = parser.GetPayloadEnumerator();
+            PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader parsedHeader = enumerator
+                    .GetHeader();
+            System.out.println(JsonFormat.printer().print(parsedHeader));
+            while (true) {
+                PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload payload = enumerator
+                        .GetNextPayload();
 
-                } catch (IOException e) {
-                        e.printStackTrace();
+                recordCount++;
+
+                if (recordCount % 100000 == 0) {
+                    System.out.println("Read " + recordCount + " records");
                 }
+
+                if (payload == null)
+                    break;
+
+                // System.out.println(JsonFormat.printer().print(payload));
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+    }
 
-        /* Big Endian (network byte order) */
+    /* Big Endian (network byte order) */
 
-        public static byte[] longToBytes(long value) {
-                byte[] result = new byte[8];
-                for (int i = 7; i >= 0; i--) {
-                        result[i] = (byte) (value & 0xFF);
-                        value >>= 8;
-                }
-                return result;
+    public static byte[] longToBytes(long value) {
+        byte[] result = new byte[8];
+        for (int i = 7; i >= 0; i--) {
+            result[i] = (byte) (value & 0xFF);
+            value >>= 8;
         }
+        return result;
+    }
 
-        /* Big Endian (network byte order) */
-        public static long bytesToLong(byte[] bytes) {
-                if (bytes == null || bytes.length != 8) {
-                        throw new IllegalArgumentException("Byte array must be exactly 8 bytes long");
-                }
-                long value = 0;
-                for (int i = 0; i < 8; i++) {
-                        value = (value << 8) | (bytes[i] & 0xFF);
-                }
-                return value;
+    /* Big Endian (network byte order) */
+    public static long bytesToLong(byte[] bytes) {
+        if (bytes == null || bytes.length != 8) {
+            throw new IllegalArgumentException("Byte array must be exactly 8 bytes long");
         }
+        long value = 0;
+        for (int i = 0; i < 8; i++) {
+            value = (value << 8) | (bytes[i] & 0xFF);
+        }
+        return value;
+    }
 
 }
