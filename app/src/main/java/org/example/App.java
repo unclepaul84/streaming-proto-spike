@@ -121,10 +121,11 @@ public class App {
         String write_File = baseFolder + "price_entities_java_indexed.binpb";
         String read_File = baseFolder + "price_entities_java_indexed.binpb";
         String index_File = baseFolder +"name.index";
+        int num_items = 100000;
 
         java.io.File indexFile = new java.io.File(index_File);
         OnDiskBPlusTree index = new OnDiskBPlusTree(index_File);
-        /*  if (indexFile.exists()) {
+          if (indexFile.exists()) {
             if (!indexFile.delete()) {
                 System.err.println("Failed to delete existing index file: " + index_File);
             }
@@ -137,7 +138,7 @@ public class App {
                 .setSource("Java App")
                 .build();
 
-        var writer = new PricesStreamedFileWriter(
+        var writer = new PricesStreamableFileWriter(
                 write_File, header, (offset, payload) -> {
 
                     try {
@@ -159,7 +160,7 @@ public class App {
         long totalBytesWritten = 0;
         var startTime = System.currentTimeMillis();
 
-        for (int i = 0; i < 1500000; i++) {
+        for (int i = 0; i < num_items; i++) {
 
             var priceEntity = PriceEntityOuterClass.PriceEntity.newBuilder()
                     .addAllPrices(prices)
@@ -191,7 +192,7 @@ public class App {
         }
 
         writer.close();
-   */
+   
 
         StreamableProtoFileParser<PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader, PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload> parser = null;
         try {
@@ -222,7 +223,7 @@ public class App {
                     .GetHeader();
                     long timerStart = System.currentTimeMillis();
 
-                    for (int i = 0; i < 1500000; i++) {
+                    for (int i = 0; i < num_items; i++) {
                         String name = "AAPL" + i;
                         index.search(name.getBytes()).forEach(value -> {
                             try {

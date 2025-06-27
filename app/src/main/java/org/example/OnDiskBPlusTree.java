@@ -89,7 +89,7 @@ public class OnDiskBPlusTree implements AutoCloseable {
             int left = 0, right = entries.size() - 1;
             while (left <= right) {
                 int mid = (left + right) >>> 1;
-                int cmp = Arrays.compare(entries.get(mid).key, key);
+                int cmp = compareByteArrays(entries.get(mid).key, key);
                 if (cmp < 0) {
                     left = mid + 1;
                 } else {
@@ -127,7 +127,7 @@ public class OnDiskBPlusTree implements AutoCloseable {
             }
             int i = 0;
             for (; i < entries.size(); i++) {
-                if (Arrays.compare(key, entries.get(i).key) < 0)
+                if (compareByteArrays(key, entries.get(i).key) < 0)
                     break;
             }
 
@@ -179,7 +179,7 @@ public class OnDiskBPlusTree implements AutoCloseable {
         int left = 0, right = entries.size() - 1;
         while (left <= right) {
             int mid = (left + right) >>> 1;
-            int cmp = Arrays.compare(entries.get(mid).key, key);
+            int cmp = compareByteArrays(entries.get(mid).key, key);
             if (cmp == 0)
                 return mid;
             if (cmp < 0)
@@ -244,7 +244,8 @@ public class OnDiskBPlusTree implements AutoCloseable {
 
             @Override
             public byte[] next() {
-                if (!hasNext()) throw new NoSuchElementException();
+                if (!hasNext())
+                    throw new NoSuchElementException();
                 buf.position(valueOffsets[valueIndex]);
                 int len = buf.getInt();
                 byte[] val = new byte[len];
@@ -270,7 +271,7 @@ public class OnDiskBPlusTree implements AutoCloseable {
             int idx = findKeyIndex(entries, key);
             if (idx != -1) {
                 LeafEntry e = entries.get(idx);
-                return new long[]{e.overflowHeadPage, e.overflowTailPage};
+                return new long[] { e.overflowHeadPage, e.overflowTailPage };
             }
             return null;
         }
@@ -282,7 +283,7 @@ public class OnDiskBPlusTree implements AutoCloseable {
                 throw new IllegalStateException("Internal node has no children");
             }
             for (InternalEntry e : entries) {
-                if (Arrays.compare(key, e.key) < 0)
+                if (compareByteArrays(key, e.key) < 0)
                     return findOverflow(leftmostChild[0], key);
                 leftmostChild[0] = e.rightChild;
             }
@@ -336,7 +337,7 @@ public class OnDiskBPlusTree implements AutoCloseable {
         }
 
         public int compareTo(ByteArrayWrapper o) {
-            return Arrays.compare(data, o.data);
+            return compareByteArrays(data, o.data);
         }
     }
 
@@ -531,5 +532,17 @@ public class OnDiskBPlusTree implements AutoCloseable {
     private int estimateInternalSize(List<InternalEntry> entries) {
         // 5 bytes header + 8 bytes leftmostChild + per-entry
         return 5 + 8 + entries.stream().mapToInt(e -> 4 + e.key.length + 8).sum();
+    }
+
+    public static int compareByteArrays(byte[] a, byte[] b) {
+        int len = Math.min(a.length, b.length);
+        for (int i = 0; i < len; i++) {
+            int byteA = a[i] & 0xFF;
+            int byteB = b[i] & 0xFF;
+            if (byteA != byteB) {
+                return byteA - byteB;
+            }
+        }
+        return a.length - b.length;
     }
 }
