@@ -43,6 +43,7 @@ public class StreamableProtoFileParser<H,P> {
         
 
         private boolean sealReached = false;    
+        private boolean randomAccessMode = false;
 
         private final Function<byte[],P> protoFactory;
         private final DataInputStream fi;
@@ -51,7 +52,7 @@ public class StreamableProtoFileParser<H,P> {
             
             this.protoFactory = protoFactory;
             this.fi = fi;
-
+            fi.mark(Integer.MAX_VALUE);
             int magicByte = fi.readInt();
 
             if (magicByte != StreamableProtoFileParser.MAGIC_BYTE) {
@@ -61,7 +62,7 @@ public class StreamableProtoFileParser<H,P> {
             int headerLength = fi.readInt();
 
             byte[] headerBytes = new byte[headerLength];
-            
+           
             fi.read(headerBytes);
             
             header = headerFactory.apply(headerBytes);
@@ -71,7 +72,43 @@ public class StreamableProtoFileParser<H,P> {
             return header;
         }
 
+        public P GetPayloadAtOffset(long offset) throws IOException, InvalidProtocolBufferException {
+            if (offset < 0) {
+                throw new IllegalArgumentException("Offset cannot be negative");
+            }
+            if (offset > fi.available()) {
+                throw new IllegalArgumentException("Offset is beyond the end of the file");
+            }
+            this.sealReached = false;
+            this.randomAccessMode = true;  
+            fi.reset();
+          
+            fi.skipNBytes(offset);
+
+              if (this.fi.available() > 0) {
+                
+                int length = this.fi.readInt();
+
+                if (length == StreamableProtoFileParser.FILE_SEAL_MARKER) {
+                    
+                    return null;
+                }
+
+                byte[] data = new byte[length];
+                this.fi.read(data);
+                return protoFactory.apply(data);
+            }
+
+            return null;
+        }
+
+
+
+
         public P GetNextPayload() throws IOException,InvalidProtocolBufferException {
+            if(randomAccessMode) {
+                throw new IllegalStateException("Cannot call GetNextPayload in random access mode. After first call to GetPayloadAtOffset() reader enters random access mode. Must start with a fresh instance of the parser to get back to sequential mode.");
+            }
             if (sealReached) {
                 return null;
             }

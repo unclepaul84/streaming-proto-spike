@@ -12,84 +12,271 @@ import com.google.protobuf.Descriptors;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
-import java.util.*;
-import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 public class App {
 
         public static void main(String[] args) throws Exception {
-        
-                try ( OnDiskBPlusTree tree = new OnDiskBPlusTree("btree.data"))
-                {
 
-  
-                  for (int i = 0; i < 5000 ; i++) {
-                        byte[] key = ("AAPL" + i).getBytes("UTF-8");
-                       
-                        for (int j = 0; j < 5000; j++) {
-                            try {
-                                byte[] value = intToByteArray(j);
-                                tree.insert(key, value); 
-                        }catch (IOException e) {
-                                System.out.println("Error inserting key: " + new String(key) + " - " + e.getMessage() +  " key count " + (i*j));
-                            }  
-                        }
-              
-                } 
-            
+                TestStreamedProtoWithIndex();
 
-                //OnDiskBPlusTree tree_read = new OnDiskBPlusTree("btree.data");
-              
-                  for (int i = 0; i < 5000 ; i++) {
-                        
-                        byte[] key = ("AAPL" + i).getBytes("UTF-8");
-                       
-                      
-                           //long startTime = System.nanoTime();
-                           Iterable<byte[]> res =  tree.search(key);
-                        //   long endTime = System.nanoTime();
-                           //System.out.println("Search took " + (endTime - startTime) / 1_000_000.0 + " ms");
-                              java.util.concurrent.atomic.AtomicLong sum = new java.util.concurrent.atomic.AtomicLong(0);
-
-                               res.forEach( value -> {
-                                   int result = fromByteArray(value);
-                                   sum.incrementAndGet();
-                                   
-                               });
-
-                               if(sum.get() != 5000) {
-                                   System.out.println("Incorrect values found for key: " + new String(key) + " - Expected 1000, found " + sum.get());
-                               }
-                               
-                       
-                } 
-                }
-
-               // System.out.println("Sum of all values: " + sum.get());
-
-        //byte[] key = "AAPL".getBytes("UTF-8");
-       
-       // byte[] bytes = intToByteArray(123456789);
-        //tree.insert(key, bytes);
-         
-         //int result =  fromByteArray( tree.search(key).get(0));
-         //System.out.println("Inserting key: " + result);
         }
 
-public static final byte[] intToByteArray(int value) {
-    return new byte[] {
-            (byte)(value >>> 24),
-            (byte)(value >>> 16),
-            (byte)(value >>> 8),
-            (byte)value};
-}
-   public static final int fromByteArray(byte[] bytes) {
-     return ((bytes[0] & 0xFF) << 24) | 
-            ((bytes[1] & 0xFF) << 16) | 
-            ((bytes[2] & 0xFF) << 8 ) | 
-            ((bytes[3] & 0xFF) << 0 );
-}
+        public static void TestStreamedProtoWithIndex() throws Exception {
+                String write_File = "price_entities_java_indexed.binpb";
+                String read_File = "price_entities_java_indexed.binpb";
+                String index_File = "name.index";
+                java.io.File indexFile = new java.io.File(index_File);
+
+                if (indexFile.exists()) {
+                                if (!indexFile.delete()) {
+                                                System.err.println("Failed to delete existing index file: " + index_File);
+                                }
+                }
+
+                OnDiskBPlusTree index = new OnDiskBPlusTree("name.index");
+
+                PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader header = PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader
+                                .newBuilder()
+                                .setSource("Java App")
+                                .build();
+
+                var writer = new PricesStreamedFileWriter(
+                                write_File, header, (offset, payload) -> {
+
+                                        try {
+                                                String name = payload.getPrice().getName();
+                                                if (name != null && !name.isEmpty()) {
+                                                        index.insert(name.getBytes("UTF-8"), longToBytes(offset));
+                                                }
+                                        } catch (Exception e) {
+                                                e.printStackTrace();
+                                        }
+
+                                });
+
+                List<Double> prices = new ArrayList<Double>();
+                for (int i = 0; i < 10000; i++) {
+                        prices.add(100.0 + i);
+                }
+
+                long totalBytesWritten = 0;
+                var startTime = System.currentTimeMillis();
+
+                for (int i = 0; i < 150000; i++) {
+
+                        var priceEntity = PriceEntityOuterClass.PriceEntity.newBuilder()
+                                        .addAllPrices(prices)
+                                        .setCurrency("USD")
+                                        .setName("AAPL" + i)
+                                        .build();
+
+                        PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload payload = PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload
+                                        .newBuilder()
+                                        .setPrice(priceEntity)
+                                        .build();
+                        var bytesWritten = writer.Write(payload);
+
+                        if (i % 10000 == 0) {
+
+                                long elapsedTime = System.currentTimeMillis() - startTime;
+                                double averageBytesPerSecond = (double) totalBytesWritten / (elapsedTime /
+                                                1000.0) / (1024.0 * 1024.0);
+                                System.out.println("Average MB written per second: " + String.format("%.1f",
+                                                averageBytesPerSecond));
+
+                        }
+
+                        if (i % 100000 == 0) {
+                                System.out.println("Written " + i + " records");
+                        }
+
+                        totalBytesWritten += bytesWritten;
+                }
+
+                writer.close();
+
+                StreamableProtoFileParser<PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader, PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload> parser = null;
+                try {
+                        parser = new StreamableProtoFileParser<PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader, PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload>(
+                                        read_File, t -> {
+                                                try {
+                                                        return PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader
+                                                                        .parseFrom(t);
+                                                } catch (InvalidProtocolBufferException e) {
+                                                        // TODO Auto-generated catch block
+                                                        e.printStackTrace();
+                                                        throw new RuntimeException(e);
+                                                }
+
+                                        }, h -> {
+                                                try {
+                                                        return PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload
+                                                                        .parseFrom(h);
+                                                } catch (InvalidProtocolBufferException e) {
+                                                        // TODO Auto-generated catch block
+                                                        e.printStackTrace();
+                                                        throw new RuntimeException(e);
+                                                }
+                                        });
+                        var enumerator = parser.GetPayloadEnumerator();
+
+                        PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader parsedHeader = enumerator
+                                        .GetHeader();
+
+                                       
+                                        for (int i = 1000; i < 10000; i++) {
+
+                                        index.search(("AAPL" + i).getBytes()).forEach(value -> {
+                                                try {
+                                                        long offset = bytesToLong(value);
+                                                        PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload payload = enumerator
+                                                                        .GetPayloadAtOffset(offset);
+                                                        System.out.println("Found " + payload.getPrice().getName());
+                                                } catch (Exception e) {
+                                                        e.printStackTrace();
+                                                }
+                                        });
 
 
-}
+                                }
 
+
+                } catch (Exception e) {
+                        e.printStackTrace();
+                }
+
+        }
+
+        public static void TestStreamedProto() throws Exception {
+
+                String write_File = "price_entities_java.binpb";
+                String read_File = "price_entities_java.binpb";
+
+                PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader header = PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader
+                                .newBuilder()
+                                .setSource("Java App")
+                                .build();
+
+                var writer = new PricesStreamedFileWriter(
+                                write_File, header);
+
+                List<Double> prices = new ArrayList<Double>();
+                for (int i = 0; i < 10000; i++) {
+                        prices.add(100.0 + i);
+                }
+
+                long totalBytesWritten = 0;
+                var startTime = System.currentTimeMillis();
+
+                for (int i = 0; i < 30000; i++) {
+
+                        var priceEntity = PriceEntityOuterClass.PriceEntity.newBuilder()
+                                        .addAllPrices(prices)
+                                        .setCurrency("USD")
+                                        .build();
+
+                        PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload payload = PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload
+                                        .newBuilder()
+                                        .setPrice(priceEntity)
+                                        .build();
+                        var bytesWritten = writer.Write(payload);
+
+                        if (i % 10000 == 0) {
+
+                                long elapsedTime = System.currentTimeMillis() - startTime;
+                                double averageBytesPerSecond = (double) totalBytesWritten / (elapsedTime /
+                                                1000.0) / (1024.0 * 1024.0);
+                                System.out.println("Average MB written per second: " + String.format("%.1f",
+                                                averageBytesPerSecond));
+
+                        }
+
+                        if (i % 100000 == 0) {
+                                System.out.println("Written " + i + " records");
+                        }
+
+                        totalBytesWritten += bytesWritten;
+                }
+
+                writer.close();
+
+                // Convert priceEntity to JSON using Google Protobuf library
+                // String json = JsonFormat.printer().print(priceEntities.get(0));
+
+                int recordCount = 0;
+
+                // Read price entities from the file
+                StreamableProtoFileParser<PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader, PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload> parser = null;
+                try {
+                        parser = new StreamableProtoFileParser<PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader, PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload>(
+                                        read_File, t -> {
+                                                try {
+                                                        return PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader
+                                                                        .parseFrom(t);
+                                                } catch (InvalidProtocolBufferException e) {
+                                                        // TODO Auto-generated catch block
+                                                        e.printStackTrace();
+                                                        throw new RuntimeException(e);
+                                                }
+
+                                        }, h -> {
+                                                try {
+                                                        return PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload
+                                                                        .parseFrom(h);
+                                                } catch (InvalidProtocolBufferException e) {
+                                                        // TODO Auto-generated catch block
+                                                        e.printStackTrace();
+                                                        throw new RuntimeException(e);
+                                                }
+                                        });
+                        var enumerator = parser.GetPayloadEnumerator();
+                        PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader parsedHeader = enumerator
+                                        .GetHeader();
+                        System.out.println(JsonFormat.printer().print(parsedHeader));
+                        while (true) {
+                                PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload payload = enumerator
+                                                .GetNextPayload();
+
+                                recordCount++;
+
+                                if (recordCount % 100000 == 0) {
+                                        System.out.println("Read " + recordCount + " records");
+                                }
+
+                                if (payload == null)
+                                        break;
+
+                                // System.out.println(JsonFormat.printer().print(payload));
+                        }
+
+                } catch (IOException e) {
+                        e.printStackTrace();
+                }
+        }
+
+        /* Big Endian (network byte order) */
+
+        public static byte[] longToBytes(long value) {
+                byte[] result = new byte[8];
+                for (int i = 7; i >= 0; i--) {
+                        result[i] = (byte) (value & 0xFF);
+                        value >>= 8;
+                }
+                return result;
+        }
+
+        /* Big Endian (network byte order) */
+        public static long bytesToLong(byte[] bytes) {
+                if (bytes == null || bytes.length != 8) {
+                        throw new IllegalArgumentException("Byte array must be exactly 8 bytes long");
+                }
+                long value = 0;
+                for (int i = 0; i < 8; i++) {
+                        value = (value << 8) | (bytes[i] & 0xFF);
+                }
+                return value;
+        }
+
+}
