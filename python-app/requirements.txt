@@ -1,1 +1,3 @@
 protobuf
+boto3
+requests

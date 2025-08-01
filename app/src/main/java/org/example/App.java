@@ -17,38 +17,86 @@ import org.apache.commons.compress.compressors.gzip.*;
 
 import java.io.*;
 import java.nio.file.*;
+import software.amazon.awssdk.services.s3.S3Client;
 
 public class App {
 
     public static void main(String[] args) throws Exception {
 
-        TestStreamedProtoWithIndex();
-        //TestStreamedProtoTarGz();
-       // TestStreamedProto();
+        TestS3BPlusTreeSeeker();
+
+        // TestStreamedProtoWithIndex();
+        // TestStreamedProtoTarGz();
+        // TestStreamedProto();
 
     }
 
-    
+    public static void TestS3BPlusTreeSeeker() throws Exception {
+        S3Client s3Client = S3Client.builder()
+                .region(software.amazon.awssdk.regions.Region.of("us-east-1"))
+                .credentialsProvider(software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider.create())
+                .build();
+        String bucketName = "test-streaming-proto-files";
+        String objectKey = "prices.binpb/name.index";
+        String objectPayload = "prices.binpb/data.binpb";
 
-    public static void TestStreamedProtoTarGz() throws Exception 
-    {
+        S3StreamableProtoFileParser<PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader, PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload> parser = new S3StreamableProtoFileParser<>(
+                s3Client,
+                bucketName,
+                objectPayload,
+                t -> {
+                    try {
+                        return PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader
+                                .parseFrom(t);
+                    } catch (InvalidProtocolBufferException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                        throw new RuntimeException(e);
+                    }
+
+                }, h -> {
+                    try {
+                        return PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload
+                                .parseFrom(h);
+                    } catch (InvalidProtocolBufferException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                        throw new RuntimeException(e);
+                    }
+                });
+
+
+        try (var accessor = parser.GetPayloadRandomAccesor()) {
+            
+            System.out.println(JsonFormat.printer().print(accessor.GetHeader()));
+
+            try (S3BPlusTreeSeeker seeker = new S3BPlusTreeSeeker(s3Client, bucketName, objectKey)) {
+                byte[] searchKey = "AAPL50".getBytes();
+                for (byte[] value : seeker.search(searchKey)) {
+                    long offset = bytesToLongBigE(value);
+                    System.out.println(offset);
+                    System.out.println(JsonFormat.printer().print(accessor.GetPayloadAtOffset(offset)));
+                }
+            }
+        }
+    }
+
+    public static void TestStreamedProtoTarGz() throws Exception {
         String baseFolder = "tar/";
 
         String write_File = baseFolder + "data.binpb";
-        
+
         String index_File = baseFolder + "name.index";
-      
+
         java.io.File indexFile = new java.io.File(index_File);
-        
+
         OnDiskBPlusTree index = new OnDiskBPlusTree(index_File);
-        
+
         if (indexFile.exists()) {
             if (!indexFile.delete()) {
                 System.err.println("Failed to delete existing index file: " + index_File);
             }
         }
-
-       
 
         PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader header = PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader
                 .newBuilder()
@@ -109,9 +157,9 @@ public class App {
         }
 
         writer.close();
-      
+
         createTarGz(Paths.get(baseFolder), Paths.get("prices.binpb.tar.gz"));
-   
+
     }
 
     public static void TestStreamedProtoWithIndex() throws Exception {
@@ -120,18 +168,20 @@ public class App {
 
         String write_File = baseFolder + "price_entities_java_indexed.binpb";
         String read_File = baseFolder + "price_entities_java_indexed.binpb";
-        String index_File = baseFolder +"name.index";
-        int num_items = 100000;
+        String index_File = baseFolder + "name.index";
+        int num_items = 1000;
+
+        System.out.println("creating index file at: " + index_File);
 
         java.io.File indexFile = new java.io.File(index_File);
-        OnDiskBPlusTree index = new OnDiskBPlusTree(index_File);
-          if (indexFile.exists()) {
+
+        if (indexFile.exists()) {
             if (!indexFile.delete()) {
                 System.err.println("Failed to delete existing index file: " + index_File);
             }
         }
 
-       
+        OnDiskBPlusTree index = new OnDiskBPlusTree(index_File);
 
         PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader header = PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader
                 .newBuilder()
@@ -192,7 +242,6 @@ public class App {
         }
 
         writer.close();
-   
 
         StreamableProtoFileParser<PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader, PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload> parser = null;
         try {
@@ -221,41 +270,40 @@ public class App {
 
             PricesStreamedFileHeaderOuterClass.PricesStreamedFileHeader parsedHeader = accessor
                     .GetHeader();
-                    long timerStart = System.currentTimeMillis();
+            long timerStart = System.currentTimeMillis();
 
-                    for (int i = 0; i < num_items; i++) {
-                        String name = "AAPL" + i;
-                        index.search(name.getBytes()).forEach(value -> {
-                            try {
-                                long offset = bytesToLongBigE(value);
-                                PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload payload = accessor
-                                        .GetPayloadAtOffset(offset);
-                               if(!name.equals(payload.getPrice().getName()))
-                                {
-                                    throw new RuntimeException("Name mismatch: " + name + " != " + payload.getPrice().getName());
-                                }
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        });
-
+            for (int i = 0; i < num_items; i++) {
+                String name = "AAPL" + i;
+                index.search(name.getBytes()).forEach(value -> {
+                    try {
+                        long offset = bytesToLongBigE(value);
+                        PricesStreamedFilePayloadOuterClass.PricesStreamedFilePayload payload = accessor
+                                .GetPayloadAtOffset(offset);
+                        if (!name.equals(payload.getPrice().getName())) {
+                            throw new RuntimeException(
+                                    "Name mismatch: " + name + " != " + payload.getPrice().getName());
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
+                });
 
-              
-                    System.out.println("Elapsed time for indexed search: " + (System.currentTimeMillis() - timerStart) + " ms");
+            }
 
+            System.out.println("Elapsed time for indexed search: " + (System.currentTimeMillis() - timerStart) + " ms");
 
-                    var   enumerator = parser.GetPayloadEnumerator();
-                    timerStart = System.currentTimeMillis();
-                    while(enumerator.GetNextPayload() != null) {
-                        // Just iterate through the file to ensure it works
-                    }
-                    System.out.println("Elapsed time for full scan: " + (System.currentTimeMillis() - timerStart) + " ms");
+            var enumerator = parser.GetPayloadEnumerator();
+            timerStart = System.currentTimeMillis();
+            while (enumerator.GetNextPayload() != null) {
+                // Just iterate through the file to ensure it works
+            }
+            System.out.println("Elapsed time for full scan: " + (System.currentTimeMillis() - timerStart) + " ms");
 
         } catch (Exception e) {
             e.printStackTrace();
         }
 
+        index.close();
     }
 
     public static void TestStreamedProto() throws Exception {
@@ -390,14 +438,14 @@ public class App {
 
     public static void createTarGz(Path sourceDir, Path tarGzPath) throws IOException {
         try (
-            OutputStream fos = Files.newOutputStream(tarGzPath);
-            BufferedOutputStream bos = new BufferedOutputStream(fos);
-            GzipCompressorOutputStream gzos = new GzipCompressorOutputStream(bos);
-            TarArchiveOutputStream taos = new TarArchiveOutputStream(gzos)
-        ) {
+                OutputStream fos = Files.newOutputStream(tarGzPath);
+                BufferedOutputStream bos = new BufferedOutputStream(fos);
+                GzipCompressorOutputStream gzos = new GzipCompressorOutputStream(bos);
+                TarArchiveOutputStream taos = new TarArchiveOutputStream(gzos)) {
             taos.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
             Files.walk(sourceDir).forEach(path -> {
-                if (Files.isDirectory(path)) return;
+                if (Files.isDirectory(path))
+                    return;
 
                 Path relativePath = sourceDir.relativize(path);
                 TarArchiveEntry entry = new TarArchiveEntry(path.toFile(), relativePath.toString());
