@@ -28,6 +28,35 @@ packet-beta
 63-67: "File Seal (Int32)"
 ```
 
+---
+
+## Indexing Support
+
+This format supports efficient random access to records using a B+Tree index file. The index maps keys (such as entity names) to payload offsets in the data file. This enables fast lookups without scanning the entire file.
+
+- **Index File**: A separate file (e.g., `name.index`) stores a B+Tree mapping keys to payload offsets.
+- **Random Access**: Use the index to retrieve the offset, then seek directly to the payload in the data file.
+- **Multi-language**: Both Java and Python implementations are provided for reading and searching the index.
+
+See:
+- [Java OnDiskBPlusTree usage](app/src/main/java/org/example/App.java)
+
+---
+
+## S3 Remote Read Support
+
+The format and libraries support reading both data and index files directly from Amazon S3 using efficient range requests.
+
+- **S3 Range Reads**: Only the required bytes are fetched from S3, minimizing bandwidth and memory usage.
+- **Streaming**: Both header and payloads can be read without downloading the full file.
+- **Index and Data**: Both the index and data files can be accessed remotely.
+
+See:
+- [Java S3StreamableProtoFileParser](app/src/main/java/org/example/S3StreamableProtoFileParser.java)
+- [Python StreamableProtoFileS3Parser](python-app/proto_streamed_file/StreamableProtoFileS3Parser.py)
+
+---
+
 ### Supported Languages
 Any language which supports reading/writing files as a stream and for which protobuf bindings can be generated.
 
