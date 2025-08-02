@@ -1,4 +1,4 @@
-# streaming-proto-file-spike
+# Reading and Writing very large Protocol Buffers encoded files
 Platform/language neutral Protocol Buffer based file format specification designed to be stream writable/readable.
 
 ### Problem Statement
